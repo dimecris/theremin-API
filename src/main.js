@@ -77,7 +77,7 @@ startBtn.addEventListener('click', async () => {
   } else {
     // Si ya está funcionando, lo detengo
     await thereminAudio.stop();
-    buttonText.textContent = 'Iniciar Theremin';
+    buttonText.textContent = 'Start Audio';
     isRunning = false;
     
     // Cuando se detiene
