@@ -32,7 +32,7 @@ console.log('Configuración inicial:', settings);
 
 // Obtengo el span con clase button-text
 const buttonText = startBtn.querySelector('.button-text');
-buttonText.textContent = 'Iniciar Theremin';
+buttonText.textContent = 'Start Audio';
 
 // Indicador de actividad (punto pulsante)
 const activeIndicator = document.getElementById('active-indicator');
@@ -60,7 +60,7 @@ startBtn.addEventListener('click', async () => {
       
       // Inicio el audio (necesario por las políticas de autoplay de los navegadores)
       await thereminAudio.start();
-      buttonText.textContent = 'Detener';
+      buttonText.textContent = 'Stop Audio';
       isRunning = true;
       
       // Registro esta sesión para las estadísticas
@@ -72,7 +72,7 @@ startBtn.addEventListener('click', async () => {
       activeIndicator.classList.add('visible'); // Muestra el punto pulsante
     } else {
       // Si algo falla, muestro un mensaje de error
-      buttonText.textContent = 'Error - Reintentar';
+      buttonText.textContent = 'Error - Try Again';
     }
   } else {
     // Si ya está funcionando, lo detengo
