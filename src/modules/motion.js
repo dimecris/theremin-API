@@ -9,7 +9,6 @@
  * 
  * Los valores de inclinación se normalizan entre -1 y 1 para facilitar
  * su uso en el control de audio y visualización.
- * También gestiona la solicitud de permisos necesarios en iOS.
  */
 
 /* Gestión del sensor de movimiento/orientación usando Capacitor Motion
@@ -36,41 +35,10 @@ export class MotionSensor {
     this._initialized = false;
   }
 
-  // Solicita permisos para acceder a los sensores (necesario en iOS)
-  // IMPORTANTE: Debe llamarse desde un evento de usuario (click/tap)
-  // porque iOS Safari/WebView requiere un "user gesture" para solicitar permisos
+  // Solicita permisos para acceder a los sensores
+  // En Android y navegadores modernos no se requieren permisos especiales
   async requestPermissions() {
-    // En iOS Safari/WebView se requiere user gesture para solicitar permisos
-    const reqs = []; // Array para almacenar las promesas de permisos
-
-    // DeviceMotionEvent (acelerómetro/rotación)
-    // Solo en iOS 13+ existe requestPermission(), en Android no hace falta
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      reqs.push(DeviceMotionEvent.requestPermission());
-    }
-
-    // DeviceOrientationEvent (orientación/giroscopio)
-    // Solo en iOS 13+ existe requestPermission(), en Android no hace falta
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      reqs.push(DeviceOrientationEvent.requestPermission());
-    }
-
-    // Si no hay permisos que solicitar (Android o navegadores que no los requieren)
-    if (reqs.length === 0) {
-      // En Android normalmente no hace falta este prompt
-      return true;
-    }
-
-    try {
-      // Espero a que se resuelvan todas las solicitudes de permisos
-      const results = await Promise.all(reqs);
-      // iOS devuelve 'granted' / 'denied'
-      // Verifico que TODOS los permisos fueron concedidos
-      return results.every(r => r === 'granted');
-    } catch (e) {
-      console.warn('No se pudo solicitar permiso de movimiento/orientación:', e);
-      return false;
-    }
+    return true;
   }
 
   // Inicializa el sensor (en desktop usa el ratón, en móvil usa el giroscopio)

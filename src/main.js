@@ -27,7 +27,7 @@ const thereminAudio = new ThereminAudio();
 const storage = new ThereminStorage();
 
 // Cargo la configuración guardada (o uso valores por defecto si es la primera vez)
-const settings = storage.loadSettings();
+let settings = storage.loadSettings();
 console.log('Configuración inicial:', settings);
 
 // Obtengo el span con clase button-text
@@ -55,7 +55,8 @@ startBtn.addEventListener('click', async () => {
     const audioOk = await thereminAudio.init();
     
     if (motionOk && audioOk) {
-      // Aplico el tipo de onda guardado en la configuración
+      // Refuerzo la sincronización: recargo settings desde storage antes de aplicar el tipo de onda
+      settings = storage.loadSettings();
       thereminAudio.setWaveType(settings.waveType);
       
       // Inicio el audio (necesario por las políticas de autoplay de los navegadores)
@@ -102,21 +103,31 @@ function updateActiveWaveButton() {
 // Inicializo el botón correcto al cargar
 updateActiveWaveButton();
 
+
 waveButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     const waveType = btn.getAttribute('data-wave');
     settings.waveType = waveType; // Actualizo la configuración en memoria
-    thereminAudio.setWaveType(waveType); // Aplico el cambio al audio
-    storage.updateSetting('waveType', waveType);// Guardo el cambio en almacenamiento
-    
-    // Resaltar botón activo
-    waveButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
+    // Cambia el tipo de onda en el audio solo si está inicializado
+    if (thereminAudio.osc) {
+      thereminAudio.setWaveType(waveType);
+    }
+    storage.updateSetting('waveType', waveType); // Guardo el cambio en almacenamiento
+    updateActiveWaveButton(); // Sincronizo visualmente los botones
+    // Llama a una función para dibujar la onda seleccionada aunque el audio no esté activo
+    if (typeof drawWavePreview === 'function') {
+      drawWavePreview(waveType);
+    }
     console.log('Tipo de onda cambiado a:', waveType);
   });
 });
 
+// Función para dibujar la forma de onda seleccionada (puedes personalizarla)
+function drawWavePreview(waveType) {
+  // Ejemplo: actualiza un canvas o SVG con la forma de onda
+  // Aquí solo muestra por consola, pero puedes implementar el dibujo real
+  console.log('Dibujar preview de onda:', waveType);
+}
 
 
 // Inicio el sketch de p5.js pasándole los módulos que necesita

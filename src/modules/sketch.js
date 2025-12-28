@@ -38,6 +38,9 @@ export const createSketch = (motionSensor, thereminAudio, storage) => {
 
     // Se ejecuta continuamente en cada frame (60 fps)
     p.draw = () => {
+      // SOLUCIÓN: Recargar settings en cada frame para detectar cambios
+      settings = storage.loadSettings();
+      
       p.background(10, 18); // Fondo semitransparente para efecto de estela
 
       // Obtengo los valores actuales de inclinación del sensor

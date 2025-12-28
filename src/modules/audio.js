@@ -3,7 +3,19 @@
  * 
  * Usa la librería p5.sound en lugar de Web Audio API directamente.
  * p5.sound simplifica la síntesis de audio pero tiene menos control de bajo nivel.
+ * 
+ * HAPTICS (FEEDBACK TÁCTIL):
+ * Este módulo usa @capacitor/haptics para dar feedback táctil en dispositivos móviles.
+ * Los haptics son vibraciones controladas que mejoran la UX al proporcionar confirmación
+ * física de acciones. En este theremin:
+ * - ImpactStyle.Medium: vibración moderada al iniciar el audio (confirma acción importante)
+ * - ImpactStyle.Light: vibración suave al parar (confirma finalización)
+ * 
+ * Los haptics NO funcionan en desktop/navegadores web, solo en apps móviles nativas
+ * compiladas con Capacitor. Por eso usamos try/catch para evitar errores en desarrollo.
  */
+
+
 
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
@@ -111,10 +123,14 @@ export class ThereminAudio {
     
     this.isPlaying = true;
     
-    // Feedback háptico al iniciar
+    // Feedback háptico al iniciar (vibración moderada para confirmar inicio)
+    // Haptics.impact() dispara una vibración táctil en el dispositivo
+    // ImpactStyle.Medium = vibración de intensidad media (más fuerte que Light, menos que Heavy)
+    // Solo funciona en dispositivos móviles nativos (iOS/Android con Capacitor)
     try {
       await Haptics.impact({ style: ImpactStyle.Medium });
     } catch (error) {
+      // En desktop/web los haptics no están disponibles, ignoramos el error silenciosamente
       console.log('Haptics no disponible en este dispositivo');
     }
     
@@ -136,7 +152,9 @@ export class ThereminAudio {
     
     this.isPlaying = false;
     
-    // Feedback háptico suave al detener
+    // Feedback háptico suave al detener (vibración ligera para confirmar parada)
+    // ImpactStyle.Light = vibración suave y breve
+    // Usamos una vibración más suave que al iniciar porque es una acción menos prominente
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
     } catch (error) {
@@ -170,8 +188,18 @@ export class ThereminAudio {
 
   // Cambia el tipo de onda del oscilador (cada tipo tiene un timbre diferente)
   setWaveType(type) {
+    if (!this.osc) return;
     if (['sine', 'square', 'sawtooth', 'triangle'].includes(type)) {
+      const wasPlaying = this.isPlaying;
+      if (wasPlaying) {
+        this.osc.stop();
+      }
       this.osc.setType(type);
+      if (wasPlaying) {
+        this.osc.start();
+        this.osc.freq(this.targetFrequency, 0.01); // Restaura frecuencia
+        this.gain.amp(this.baseVolume, 0.1); // Restaura volumen
+      }
       console.log('Tipo de onda cambiado a:', type);
     }
   }

@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Theremin Glitch</title>
-    <!-- ❌ QUITAR de aquí -->
 </head>
 <body>
   <div id="p5-container"></div>
@@ -27,7 +26,8 @@
       </button>
     </div>
 
-    <!-- Bottom Area - Wave Selector -->
+    <!-- Bottom Area - Wave Selector 
+     Se usa el inglés porque la nomenclatura de tipos de onda es estándar en síntesis de audio -->
     <div class="bottom-area" id="controls-container">
       <div class="wave-selector">
         <button id="waveBtn1" class="wave-button active" data-wave="sine">Sine</button>
@@ -52,11 +52,11 @@
 
 
   
-  <!-- ✅ Scripts p5 ANTES del module -->
+  <!--Scripts p5 ANTES del module -->
   <script src="/p5.js"></script>
   <script src="/p5.sound.min.js"></script>
   
-  <!-- ✅ Tu código module AL FINAL -->
+  <!--  código module AL FINAL -->
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
