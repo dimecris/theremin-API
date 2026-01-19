@@ -15,8 +15,6 @@
  * compiladas con Capacitor. Por eso usamos try/catch para evitar errores en desarrollo.
  */
 
-
-
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export class ThereminAudio {
@@ -188,18 +186,8 @@ export class ThereminAudio {
 
   // Cambia el tipo de onda del oscilador (cada tipo tiene un timbre diferente)
   setWaveType(type) {
-    if (!this.osc) return;
     if (['sine', 'square', 'sawtooth', 'triangle'].includes(type)) {
-      const wasPlaying = this.isPlaying;
-      if (wasPlaying) {
-        this.osc.stop();
-      }
       this.osc.setType(type);
-      if (wasPlaying) {
-        this.osc.start();
-        this.osc.freq(this.targetFrequency, 0.01); // Restaura frecuencia
-        this.gain.amp(this.baseVolume, 0.1); // Restaura volumen
-      }
       console.log('Tipo de onda cambiado a:', type);
     }
   }
