@@ -2,15 +2,24 @@
  * MÓDULO DE SENSORES DE MOVIMIENTO
  * 
  * Este módulo gestiona la lectura de los sensores de orientación del dispositivo
- * utilizando la API DeviceOrientation nativa del navegador/WebView.
+ * utilizando el plugin oficial de Capacitor (@capacitor/motion).
  * 
  * En móvil lee los valores reales del giroscopio.
  * En desktop (desarrollo) simula la inclinación con la posición del ratón.
  * 
  * Los valores de inclinación se normalizan entre -1 y 1 para facilitar
  * su uso en el control de audio y visualización.
- * También gestiona la solicitud de permisos necesarios en iOS.
  */
+
+/* Gestión del sensor de movimiento/orientación usando Capacitor Motion
+   https://capacitorjs.com/docs/apis/motion
+   Flujo:
+   1. new ThereminMotion()
+   2. Usuario hace click en botón START -> requestPermissions()
+   3. then init() para empezar a recibir datos
+   4. start() y getTiltX/Y() para obtener valores normalizados
+*/
+import { Motion } from '@capacitor/motion';
 
 export class MotionSensor {
   constructor() {
@@ -26,38 +35,10 @@ export class MotionSensor {
     this._initialized = false;
   }
 
-  // Solicita permisos para acceder a los sensores (necesario en iOS Safari)
-  // IMPORTANTE: En Capacitor, los permisos se manejan automáticamente via Info.plist
+  // Solicita permisos para acceder a los sensores
+  // En Android y navegadores modernos no se requieren permisos especiales
   async requestPermissions() {
-    console.log('🔐 Verificando permisos de sensores...');
-    
-    // Solo para Safari web iOS 13+ existe requestPermission()
-    const reqs = [];
-
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      reqs.push(DeviceMotionEvent.requestPermission());
-    }
-
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      reqs.push(DeviceOrientationEvent.requestPermission());
-    }
-
-    // Si no hay permisos que solicitar (Capacitor o Android)
-    if (reqs.length === 0) {
-      console.log('✅ Permisos gestionados automáticamente');
-      return true;
-    }
-
-    try {
-      const results = await Promise.all(reqs);
-      const granted = results.every(r => r === 'granted');
-      console.log(granted ? '✅ Permisos concedidos' : '❌ Permisos denegados');
-      return granted;
-    } catch (e) {
-      console.warn('⚠️ Error solicitando permisos:', e.message);
-      // En Capacitor esto es OK - los permisos se manejan via Info.plist
-      return true;
-    }
+    return true;
   }
 
   // Inicializa el sensor (en desktop usa el ratón, en móvil usa el giroscopio)
