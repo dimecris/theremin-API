@@ -1,0 +1,34 @@
+# Ignorar el archivo de módulo de tono de audio
+src/modules/audio-tone.js
+# Dependencias
+node_modules/
+
+# Build de Vite
+dist/
+
+# Capacitor
+android/
+ios/
+.capacitor/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Archivos temporales
+*.tmp
+.cache/
