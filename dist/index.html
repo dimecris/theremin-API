@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Theremin Glitch</title>
+  <script type="module" crossorigin src="/assets/index-z2Jsiyjp.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CLQ1SuBV.css">
+</head>
+<body>
+  <div id="p5-container"></div>
+
+
+  <!-- UI Overlay -->
+  <div class="ui-overlay">
+    <!-- Top Area - Title -->
+    <div class="top-area">
+      <h1 class="title">THEREMIN</h1>
+      <p class="subtitle" id="subtitle">Move your device</p>
+    </div>
+
+    <!-- Center Area - Main Button -->
+    <div class="center-area">
+      <button id="startBtn" class="glassmorphic-button">
+        <div class="button-glow"></div>
+        <span class="button-text">Start Audio</span>
+        <div class="active-indicator" id="active-indicator"></div>
+      </button>
+    </div>
+
+    <!-- Bottom Area - Wave Selector 
+     Se usa el inglés porque la nomenclatura de tipos de onda es estándar en síntesis de audio -->
+    <div class="bottom-area" id="controls-container">
+      <div class="wave-selector">
+        <button id="waveBtn1" class="wave-button active" data-wave="sine">Sine</button>
+        <button id="waveBtn2" class="wave-button" data-wave="square">Square</button>
+        <button id="waveBtn3" class="wave-button" data-wave="sawtooth">Saw</button>
+        <button id="waveBtn4" class="wave-button" data-wave="triangle">Triangle</button>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Debug Overlay -->
+  <div class="debug-overlay" id="debug-overlay">
+    <div>Tilt X: <span id="debug-tilt-x">0.000</span></div>
+    <div>Tilt Y: <span id="debug-tilt-y">0.000</span></div>
+    <div>Intensidad: <span id="debug-intensity">0.000</span></div>
+    <div>Frecuencia: <span id="debug-frequency">0</span> Hz</div>
+    <div>Tipo de Onda: <span id="debug-wave-type">sine</span></div>
+    <div>Conteo de Sesiones: <span id="debug-session-count">0</span></div>
+  </div>
+
+
+
+  
+  <!--Scripts p5 ANTES del module -->
+  <script src="/p5.js"></script>
+  <script src="/p5.sound.min.js"></script>
+  
+  <!--  código module AL FINAL -->
+</body>
+</html>

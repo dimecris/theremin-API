@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Theremin</string>
+    <string name="title_activity_main">Theremin</string>
+    <string name="package_name">com.theremin.kd</string>
+    <string name="custom_url_scheme">com.theremin.kd</string>
+</resources>

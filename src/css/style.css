@@ -1,0 +1,332 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #000;
+  color: #fff;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#p5-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+/* UI Overlay */
+.ui-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem;
+  pointer-events: none;
+}
+
+/* Top Area */
+.top-area {
+  text-align: center;
+  animation: fadeInDown 0.6s ease-out 0.2s both;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.subtitle.active {
+  animation: none;
+  opacity: 0.3;
+}
+
+/* Center Area */
+.center-area {
+  pointer-events: auto;
+  animation: fadeInScale 0.6s ease-out 0.4s both;
+}
+
+/* Glassmorphic Button */
+.glassmorphic-button {
+  position: relative;
+  padding: 1rem 2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+  outline: none;
+}
+
+.glassmorphic-button:active {
+  transform: scale(0.95);
+}
+
+.glassmorphic-button:hover {
+  transform: scale(1.05);
+}
+
+.glassmorphic-button.active {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(59, 130, 246, 0.2));
+}
+
+.button-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1), transparent);
+  filter: blur(10px);
+  opacity: 0.3;
+  animation: none;
+}
+
+.glassmorphic-button.active .button-glow {
+  background: radial-gradient(circle at center, rgba(168, 85, 247, 0.4), transparent);
+  animation: buttonGlow 2s ease-in-out infinite;
+}
+
+.button-text {
+  position: relative;
+  z-index: 10;
+  font-size: 0.875rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.active-indicator {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: rgb(192, 132, 252);
+  border-radius: 9999px;
+  transform: translateY(-50%);
+  opacity: 0;
+  animation: none;
+}
+
+.active-indicator.visible {
+  opacity: 1;
+  animation: indicatorPulse 1.5s ease-in-out infinite;
+}
+
+/* Bottom Area */
+.bottom-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  pointer-events: auto;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.bottom-area.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Wave Selector */
+.wave-selector {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+.wave-button {
+  position: relative;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.2s ease;
+  outline: none;
+}
+
+.wave-button:active {
+  transform: scale(0.95);
+}
+
+.wave-button.active {
+  color: rgba(255, 255, 255, 1);
+  background: linear-gradient(to right, rgba(168, 85, 247, 0.3), rgba(59, 130, 246, 0.3));
+}
+
+/* Hint */
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.dot {
+  width: 0.25rem;
+  height: 0.25rem;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+}
+
+/* Debug Overlay */
+.debug-overlay {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.debug-overlay.visible {
+  opacity: 0.6;
+}
+
+.debug-overlay div {
+  margin-bottom: 0.25rem;
+}
+
+/* Debug Tap Zone */
+.debug-tap-zone {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 4rem;
+  height: 4rem;
+  z-index: 50;
+  cursor: pointer;
+}
+
+/* Permission Notice */
+.permission-notice {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: rgba(234, 179, 8, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(253, 224, 71, 0.8);
+  z-index: 20;
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes buttonGlow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes indicatorPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translateY(-50%) scale(1.2);
+  }
+}
