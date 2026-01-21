@@ -82,21 +82,27 @@ export class ThereminAudio {
     try {
       // Crea los objetos de p5.sound (requiere que p5 esté cargado en index.html)
       this.osc = new p5.Oscillator();
-      this.filter = new p5.Filter();
       this.gain = new p5.Gain();
+
+      // Filtro pasa-bajos para suavizar el sonido 
+      // En P5.Sound V2  p5.Filter ya no se usa como constructor generico
+      // se deben usar constructores específicos según el tipo de filtro p5.BandPass, p5.LowPass, etc.
+      this.filter = new p5.LowPass(); 
       
       // Configuro el oscilador
       this.osc.setType('sine');
       this.osc.freq(440);
       
       // Configuro el filtro pasa-bajos
-      this.filter.setType('lowpass');
+      //this.filter.setType('lowpass');
       this.filter.freq(2000);
       this.filter.res(1);
       
-      // Configuro la ganancia (volumen)
-      this.gain.setInput(this.osc);
+      // CAMBIADO: Nueva forma de conectar en p5.sound v2
+      // Conexión en cadena: oscilador -> filtro -> ganancia
+      this.osc.disconnect();
       this.osc.connect(this.filter);
+      this.filter.disconnect();
       this.filter.connect(this.gain);
       
       // Configuro volumen inicial a 0

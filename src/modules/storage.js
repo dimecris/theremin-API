@@ -36,7 +36,11 @@ export class ThereminStorage {
       const stored = localStorage.getItem(this.storageKey);
       
       if (stored) {
-        this.settings = JSON.parse(stored);
+        //Correccion profesor que evita un NaN en sessionCount
+        //this.settings = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Merge default settings with stored settings to ensure new keys are present
+        this.settings = { ...this.defaultSettings, ...parsed };
         console.log('Configuración cargada:', this.settings);
       } else {
         this.settings = { ...this.defaultSettings };

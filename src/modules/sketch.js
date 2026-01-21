@@ -28,8 +28,9 @@ export const createSketch = (motionSensor, thereminAudio, storage) => {
     const numParticles = 100; // 100 partículas en la escena
     let settings;
 
+    // CAMBIADO: setup() ahora es async
     // Se ejecuta una vez al inicializar
-    p.setup = () => {
+    p.setup = async () => {
       // Creo el canvas con las dimensiones de la ventana
       let cnv = p.createCanvas(p.windowWidth, p.windowHeight);
       // Vinculo el canvas al contenedor HTML
@@ -37,8 +38,8 @@ export const createSketch = (motionSensor, thereminAudio, storage) => {
 
       console.log('🎨 Canvas creado:', p.windowWidth, 'x', p.windowHeight);
 
-      // Cargo la configuración guardada (tipo de onda, sensibilidad, etc.)
-      settings = storage.loadSettings();
+      // Espero a que se cargue la configuración
+      settings = await storage.loadSettings();
 
       // Inicializo todas las partículas
       for (let i = 0; i < numParticles; i++) {
@@ -48,6 +49,9 @@ export const createSketch = (motionSensor, thereminAudio, storage) => {
 
     // Se ejecuta continuamente en cada frame (60 fps)
     p.draw = () => {
+      // Verifico que settings esté cargado antes de continuar
+      if (!settings) return;
+      
       p.background(10, 18); // Fondo semitransparente para efecto de estela
 
       // Obtengo los valores actuales de inclinación del sensor
