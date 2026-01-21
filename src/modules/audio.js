@@ -125,31 +125,30 @@ export class ThereminAudio {
   this.isPlaying = true;
 }
   async stop() {
-    if (!this.osc) return;cd 
-    
-    // Fade out del volumen
-    this.gain.amp(0, 0.1);
-    
-    // Detengo el oscilador después del fade
-    setTimeout(() => {
-      if (this.osc) {
-        this.osc.stop();
-      }
-    }, 100);
-    
-    this.isPlaying = false;
-    
-    // Feedback háptico suave al detener (vibración ligera para confirmar parada)
-    // ImpactStyle.Light = vibración suave y breve
-    // Usamos una vibración más suave que al iniciar porque es una acción menos prominente
-    try {
-      await Haptics.impact({ style: ImpactStyle.Light });
-    } catch (error) {
-      console.log('Haptics no disponible en este dispositivo');
+  if (!this.osc) return;
+  
+  // Fade out del volumen
+  this.gain.amp(0, 0.1);
+  
+  // Marcamos como no reproduciendo ANTES de detener
+  this.isPlaying = false;
+  
+  // Detengo el oscilador después del fade
+  setTimeout(() => {
+    if (this.osc) {
+      this.osc.stop();
     }
-    
-    console.log('Audio pausado');
+  }, 100);
+  
+  // Feedback háptico suave al detener
+  try {
+    await Haptics.impact({ style: ImpactStyle.Light });
+  } catch (error) {
+    console.log('Haptics no disponible en este dispositivo');
   }
+  
+  console.log('Audio pausado');
+}
 
   // Actualiza los parámetros del audio según la inclinación (llamado cada frame)
 update(tiltX, tiltY) {
