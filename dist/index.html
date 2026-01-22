@@ -2,13 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  
+  <!-- Forzar orientación vertical -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
+  
   <title>Theremin Glitch</title>
-
-  <!-- Evita el 404 de favicon.ico -->
   <link rel="icon" href="data:," />
-  <script type="module" crossorigin src="/assets/index-BwTeXS-Q.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CLQ1SuBV.css">
+  <script type="module" crossorigin src="/assets/index-DQowXJrO.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Bnuu_jQS.css">
 </head>
 
 <body>
@@ -16,6 +20,53 @@
 
   <!-- UI Overlay -->
   <div class="ui-overlay">
+    <!-- Botón Hamburguesa -->
+    <button id="hamburger-btn" class="hamburger-btn" aria-label="Abrir menú">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+
+    <!-- Menú Lateral -->
+    <nav id="side-menu" class="side-menu">
+      <div class="menu-header">
+        <h2>Menú</h2>
+        <button id="close-menu-btn" class="close-btn" aria-label="Cerrar menú">×</button>
+      </div>
+      
+      <ul class="menu-list">
+        <li>
+          <button id="toggle-debug-menu" class="menu-item">
+            <span class="menu-icon">🐛</span>
+            <span>Toggle Debug Info</span>
+          </button>
+        </li>
+        <li>
+          <button id="toggle-waves-menu" class="menu-item">
+            <span class="menu-icon">🌊</span>
+            <span id="waves-menu-status">Ondas: ON</span>
+          </button>
+        </li>
+        <li>
+          <button id="reset-settings-menu" class="menu-item">
+            <span class="menu-icon">🔄</span>
+            <span>Resetear Configuración</span>
+          </button>
+        </li>
+        <li class="menu-divider"></li>
+        <li class="menu-info">
+          <span class="menu-icon">ℹ️</span>
+          <div>
+            <p><strong>Theremin Meteorológico</strong></p>
+            <p>v1.0 - UOC 2026</p>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Overlay para cerrar el menú -->
+    <div id="menu-overlay" class="menu-overlay"></div>
+
     <!-- Top Area - Title -->
     <div class="top-area">
       <h1 class="title">THEREMIN</h1>
@@ -23,9 +74,9 @@
 
       <!-- PR2: Estado contextual (Lugar + Escala) -->
       <div class="env-bar" aria-label="Estado ambiental">
-        <span>📍 <strong id="location-label">Palma</strong></span>
-        <span>·</span>
-        <span>🎼 <strong id="scale-label">pentatonic_major</strong></span>
+        <span><strong id="location-label">Palma</strong></span>
+        <span>–</span>
+        <span> <strong id="scale-label">pentatonic_major</strong></span>
       </div>
     </div>
 
@@ -58,7 +109,8 @@
           autocapitalize="words"
           placeholder="Introduce una ciudad (ej. Palma)"
         />
-        <button id="city-apply" class="city-apply-btn" type="button">Aplicar</button>
+
+          <button id="city-apply" class="wave-button active" type="button">Aplicar</button>
       </div>
     </div>
   </div>

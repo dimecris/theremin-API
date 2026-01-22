@@ -220,11 +220,11 @@ export class ThereminAudio {
   setEnvironment(style) {
     if (!style) return;
     
-    console.log('🌦️ Parámetros ambientales aplicados:', {
+    /* console.log('🌦️ Parámetros ambientales aplicados:', {
       humedad: style.h01,
       viento: style.w01,
       temperatura: style.t01
-    });
+    }); */
   }
 
   dispose() {

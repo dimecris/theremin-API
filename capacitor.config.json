@@ -1,5 +1,22 @@
 {
-  "appId": "com.theremin.kd",
-  "appName": "Theremin",
-  "webDir": "dist"
+  "appId": "com.tudominio.theremin",
+  "appName": "Theremin Meteorológico",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "ScreenOrientation": {
+      "orientation": "portrait"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1a1a2e",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#000000"
+    }
+  }
 }

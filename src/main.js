@@ -8,6 +8,8 @@ import { ThereminAudio } from './modules/audio.js';
 import { ThereminStorage } from './modules/storage.js';
 import { createSketch } from './modules/sketch.js';
 import { EnvironmentService } from './modules/environment.js';
+import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { Capacitor } from '@capacitor/core';
 
 // Instancias de módulos
 const motionSensor = new MotionSensor();
@@ -57,6 +59,16 @@ const wavesStatus = document.getElementById('waves-status');
 
 // NUEVO: Referencia al debug overlay
 const debugOverlay = document.getElementById('debug-overlay');
+
+// NUEVO: Referencias al menú hamburguesa
+const hamburgerBtn = document.getElementById('hamburger-btn');
+const sideMenu = document.getElementById('side-menu');
+const closeMenuBtn = document.getElementById('close-menu-btn');
+const menuOverlay = document.getElementById('menu-overlay');
+const toggleDebugMenu = document.getElementById('toggle-debug-menu');
+const toggleWavesMenu = document.getElementById('toggle-waves-menu');
+const wavesMenuStatus = document.getElementById('waves-menu-status');
+const resetSettingsMenu = document.getElementById('reset-settings-menu');
 
 // Helpers UI
 function updateActiveWaveButton() {
@@ -130,7 +142,7 @@ function getWeatherDescription(code) {
 // NUEVA FUNCIÓN: Cambiar a ciudad aleatoria
 async function loadRandomCity() {
   const randomCity = RANDOM_CITIES[Math.floor(Math.random() * RANDOM_CITIES.length)];
-  console.log('🎲 Cambiando a ciudad aleatoria:', randomCity);
+  console.log('– Cambiando a ciudad aleatoria:', randomCity);
   
   try {
     await loadCityWeather(randomCity);
@@ -152,23 +164,23 @@ async function loadRandomCity() {
 // Función para obtener clima de una ciudad
 async function loadCityWeather(cityName) {
   try {
-    console.log('🌍 Buscando ciudad:', cityName);
+    console.log('– Buscando ciudad:', cityName);
     
     currentLocation = await env.geocodeCity(cityName);
-    console.log('📍 Ubicación:', currentLocation);
+    console.log('– Ubicación:', currentLocation);
     
     currentMeteo = await env.fetchMeteo(
       currentLocation.lat,
       currentLocation.lon,
       currentLocation.timezone
     );
-    console.log('🌤️ Datos meteorológicos:', currentMeteo);
+    console.log('– Datos meteorológicos:', currentMeteo);
     
     const scaleInfo = env.decideScale(currentMeteo);
-    console.log('🎼 Escala decidida:', scaleInfo);
+    console.log('– Escala decidida:', scaleInfo);
     
     currentWeatherStyle = env.buildWeatherStyle(currentMeteo);
-    console.log('🎨 WeatherStyle:', currentWeatherStyle);
+    console.log('– WeatherStyle:', currentWeatherStyle);
     
     storage.updateSetting('locationName', currentLocation.name);
     storage.updateSetting('locationLat', currentLocation.lat);
@@ -238,6 +250,21 @@ cityApplyBtn?.addEventListener('click', async () => {
   }
 });
 
+// ELIMINAR las funciones lockToPortrait() y enterFullscreen()
+// En su lugar, usar el plugin de Capacitor:
+
+// async function lockToPortrait() {
+//   try {
+//     await ScreenOrientation.lock({ orientation: 'portrait' });
+//     console.log('✅ Orientación bloqueada a portrait (Capacitor)');
+//   } catch (error) {
+//     console.warn('⚠️ No se pudo bloquear orientación:', error);
+//   }
+// }
+
+// Llamar al inicio o cuando quieras bloquear
+// lockToPortrait();
+
 // Botón start/stop
 startBtn?.addEventListener('click', async () => {
   if (!isRunning) {
@@ -270,25 +297,16 @@ startBtn?.addEventListener('click', async () => {
       storage.registerSession();
       activeIndicator?.classList.add('visible');
 
-      // NUEVO: Esperar un momento para que se active isDebugMode
+      // MOSTRAR DEBUG SOLO EN WEB/BROWSER (no en iOS/Android nativos)
       setTimeout(() => {
-        console.log('🔍 Verificando modo debug:', {
-          isDebugMode: motionSensor.isDebugMode,
-          hasRealSensor: motionSensor.hasRealSensor,
-          debugOverlay: !!debugOverlay
-        });
-
-        // Activar debug overlay si estamos en modo debug (navegador de escritorio)
-        if (debugOverlay && motionSensor.isDebugMode) {
+        const platform = Capacitor.getPlatform();
+        if (debugOverlay && platform === 'web') {
           debugOverlay.classList.add('visible');
-          console.log('🐛 Debug overlay activado (modo navegador)');
-        } else if (debugOverlay) {
-          console.warn('⚠️ Debug overlay encontrado pero isDebugMode es false');
+          console.log('🐛 Debug overlay activado (solo en browser)');
         }
-      }, 1500); // Esperar 1.5 segundos para asegurar que isDebugMode se haya establecido
+      }, 1500);
 
       console.log('Theremin activo');
-      console.log('🎵 Tipo de onda activo:', settings.waveType);
       console.log('💡 Agita el móvil para cambiar de ciudad aleatoria!');
       
       await refreshEnvironmentFromSettings();
@@ -301,7 +319,6 @@ startBtn?.addEventListener('click', async () => {
     isRunning = false;
     activeIndicator?.classList.remove('visible');
     
-    // Ocultar debug overlay al parar
     if (debugOverlay) {
       debugOverlay.classList.remove('visible');
     }
@@ -340,13 +357,147 @@ window.addEventListener('beforeunload', async () => {
   thereminAudio.dispose();
 });
 
-// NUEVO: Toggle manual con tecla 'D' (solo en modo debug)
-window.addEventListener('keydown', (e) => {
-  if ((e.key === 'd' || e.key === 'D') && motionSensor.isDebugMode && isRunning) {
+// ============================================
+// MENÚ HAMBURGUESA
+// ============================================
+
+function openMenu() {
+  console.log('🍔 Abriendo menú...');
+  sideMenu?.classList.add('open');
+  menuOverlay?.classList.add('visible');
+  hamburgerBtn?.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  console.log('✅ Menú abierto');
+}
+
+function closeMenu() {
+  console.log('🍔 Cerrando menú...');
+  sideMenu?.classList.remove('open');
+  menuOverlay?.classList.remove('visible');
+  hamburgerBtn?.classList.remove('active');
+  document.body.style.overflow = '';
+  console.log('✅ Menú cerrado');
+}
+
+// Event listener del botón hamburguesa
+if (hamburgerBtn) {
+  hamburgerBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🍔 Click en hamburguesa detectado');
+    
+    if (sideMenu?.classList.contains('open')) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  });
+  console.log('✅ Event listener del hamburguesa añadido');
+} else {
+  console.error('❌ No se encontró el botón hamburguesa');
+}
+
+// Botón cerrar
+if (closeMenuBtn) {
+  closeMenuBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeMenu();
+  });
+  console.log('✅ Event listener del botón cerrar añadido');
+}
+
+// Overlay para cerrar
+if (menuOverlay) {
+  menuOverlay.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeMenu();
+  });
+  console.log('✅ Event listener del overlay añadido');
+}
+
+// Opciones del menú
+if (toggleDebugMenu) {
+  toggleDebugMenu.addEventListener('click', () => {
+    console.log('🐛 Toggle debug desde menú');
+    
     if (debugOverlay) {
+      if (!isRunning) {
+        alert('Primero inicia el theremin para ver el debug');
+        closeMenu();
+        return;
+      }
+      
       debugOverlay.classList.toggle('visible');
       const isVisible = debugOverlay.classList.contains('visible');
       console.log('🐛 Debug overlay:', isVisible ? 'mostrado' : 'ocultado');
     }
+    closeMenu();
+  });
+  console.log('✅ Event listener de toggle debug añadido');
+}
+
+if (toggleWavesMenu) {
+  toggleWavesMenu.addEventListener('click', () => {
+    console.log('🌊 Toggle ondas desde menú');
+    
+    const currentMode = settings.visualMode;
+    const newMode = currentMode === 1 ? 0 : 1;
+    
+    storage.updateSetting('visualMode', newMode);
+    settings.visualMode = newMode;
+    
+    if (wavesMenuStatus) {
+      wavesMenuStatus.textContent = newMode === 1 ? 'Ondas: ON' : 'Ondas: OFF';
+    }
+    
+    console.log('👁️ Modo visual:', newMode === 1 ? 'Ondas visibles' : 'Solo partículas');
+    closeMenu();
+  });
+  console.log('✅ Event listener de toggle ondas añadido');
+}
+
+if (resetSettingsMenu) {
+  resetSettingsMenu.addEventListener('click', () => {
+    console.log('🔄 Reset settings desde menú');
+    
+    if (confirm('¿Resetear toda la configuración? Esta acción no se puede deshacer.')) {
+      storage.clearAll();
+      location.reload();
+    }
+    closeMenu();
+  });
+  console.log('✅ Event listener de reset settings añadido');
+}
+
+// Inicializar estado del toggle de ondas en el menú
+if (wavesMenuStatus && settings.visualMode !== undefined) {
+  wavesMenuStatus.textContent = settings.visualMode === 1 ? 'Ondas: ON' : 'Ondas: OFF';
+  console.log('✅ Estado inicial de ondas:', settings.visualMode === 1 ? 'ON' : 'OFF');
+}
+
+// Cerrar menú con tecla Escape
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && sideMenu?.classList.contains('open')) {
+    closeMenu();
   }
+  
+  // Toggle debug con tecla 'D' (solo cuando está corriendo)
+  if ((e.key === 'd' || e.key === 'D') && isRunning) {
+    if (debugOverlay) {
+      debugOverlay.classList.toggle('visible');
+      const isVisible = debugOverlay.classList.contains('visible');
+      console.log('🐛 Debug overlay (tecla D):', isVisible ? 'mostrado' : 'ocultado');
+    }
+  }
+});
+
+// Verificar que los elementos del menú existan
+console.log('🍔 Estado de elementos del menú:', {
+  hamburgerBtn: !!hamburgerBtn,
+  sideMenu: !!sideMenu,
+  closeMenuBtn: !!closeMenuBtn,
+  menuOverlay: !!menuOverlay,
+  toggleDebugMenu: !!toggleDebugMenu,
+  toggleWavesMenu: !!toggleWavesMenu,
+  resetSettingsMenu: !!resetSettingsMenu
 });
