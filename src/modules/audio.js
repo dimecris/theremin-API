@@ -1,221 +1,242 @@
 /**
- * MÓDULO DE SÍNTESIS DE AUDIO CON P5.SOUND
- * 
- * Usa la librería p5.sound en lugar de Web Audio API directamente.
- * p5.sound simplifica la síntesis de audio pero tiene menos control de bajo nivel.
- * 
- * HAPTICS (FEEDBACK TÁCTIL):
- * Este módulo usa @capacitor/haptics para dar feedback táctil en dispositivos móviles.
- * Los haptics son vibraciones controladas que mejoran la UX al proporcionar confirmación
- * física de acciones. En este theremin:
- * - ImpactStyle.Medium: vibración moderada al iniciar el audio (confirma acción importante)
- * - ImpactStyle.Light: vibración suave al parar (confirma finalización)
- * 
- * Los haptics NO funcionan en desktop/navegadores web, solo en apps móviles nativas
- * compiladas con Capacitor. Por eso usamos try/catch para evitar errores en desarrollo.
+ * MÓDULO DE AUDIO (THEREMIN)
+ * Genera sonido mediante oscilador con efectos ambientales
  */
-
-
-
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export class ThereminAudio {
   constructor() {
-    this.osc = null; // p5.Oscillator
-    this.gain = null; // p5.Gain
-    this.filter = null; // p5.Filter
-    this.isPlaying = false;
-    
-    this.minFreq = 200;
-    this.maxFreq = 1000;
-    
-    this.baseVolume = 0.3;
-    this.targetFrequency = 440;
-    
-    this.pentatonicScale = this.generatePentatonicScale();
-    this.useQuantization = true;
-  }
+    this.audioContext = null;
+    this.osc = null;
+    this.gain = null;
+    this.isRunning = false;
 
-  // Genera una escala pentatónica mayor (intervalos: 0, 2, 4, 7, 9 semitonos)
-  // Ejemplo: Do, Re, Mi, Sol, La
-  generatePentatonicScale() {
-    const baseFreq = 220; // Frecuencia base: La (A3)
-    const intervals = [0, 2, 4, 7, 9]; // Intervalos de la pentatónica mayor
-    const octaves = 3; // Genera 3 octavas para tener suficiente rango
-    const scale = [];
-    
-    for (let octave = 0; octave < octaves; octave++) {
-      for (let interval of intervals) {
-        // Calcula cada frecuencia usando la fórmula: freq = baseFreq * 2^(semitonos/12)
-        const semitones = (octave * 12) + interval;
-        const frequency = baseFreq * Math.pow(2, semitones / 12);
-        scale.push(frequency);
-      }
-    }
-    
-    // Ordena las frecuencias de menor a mayor
-    return scale.sort((a, b) => a - b);
-  }
+    // MODIFICADO: Rango de frecuencias más cálido y musical
+    this.minFreq = 220; // A3 - más grave y cálido
+    this.maxFreq = 880; // A5 - dos octavas arriba
 
-  // Encuentra la nota más cercana en la escala pentatónica para que suene musical
-  quantizeFrequency(targetFreq) {
-    if (!this.useQuantization) {
-      return targetFreq;
-    }
-    
-    let closest = this.pentatonicScale[0];
-    let minDiff = Math.abs(targetFreq - closest);
-    
-    // Busca la frecuencia de la escala más cercana a la objetivo
-    for (let freq of this.pentatonicScale) {
-      const diff = Math.abs(targetFreq - freq);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = freq;
-      }
-    }
-    
-    return closest;
+    // Tipo de onda (sine por defecto = más suave)
+    this.waveType = 'sine';
+
+    // Escala musical (pentatónica por defecto = más consonante)
+    this.currentScale = 'pentatonic_major';
+    this.scaleNotes = this.getScaleNotes('pentatonic_major');
+
+    // Propiedades públicas para debug
+    this.currentFrequency = 0;
+    this.currentVolume = 0;
+    this.currentNote = '-';
+
+    // Suavizado de transiciones (glide/portamento)
+    this.glideTime = 0.05; // 50ms de transición suave entre notas
+
+    // Parámetros ambientales (PR2)
+    this.envParams = {
+      reverb: 0,
+      filter: 1000,
+      distortion: 0
+    };
   }
 
   async init() {
     try {
-      // Crea los objetos de p5.sound (requiere que p5 esté cargado en index.html)
-      this.osc = new p5.Oscillator();
-      this.gain = new p5.Gain();
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      this.osc = this.audioContext.createOscillator();
+      this.osc.type = this.waveType;
+      this.osc.frequency.setValueAtTime(this.minFreq, this.audioContext.currentTime);
 
-      // Filtro pasa-bajos para suavizar el sonido 
-      // En P5.Sound V2  p5.Filter ya no se usa como constructor generico
-      // se deben usar constructores específicos según el tipo de filtro p5.BandPass, p5.LowPass, etc.
-      this.filter = new p5.LowPass(); 
-      
-      // Configuro el oscilador
-      this.osc.setType('sine');
-      this.osc.freq(440);
-      
-      // Configuro el filtro pasa-bajos
-      //this.filter.setType('lowpass');
-      this.filter.freq(2000);
-      this.filter.res(1);
-      
-      // CAMBIADO: Nueva forma de conectar en p5.sound v2
-      // Conexión en cadena: oscilador -> filtro -> ganancia
-      this.osc.disconnect();
-      this.osc.connect(this.filter);
-      this.filter.disconnect();
-      this.filter.connect(this.gain);
-      
-      // Configuro volumen inicial a 0
-      this.gain.amp(0);
-      
-      console.log('Audio inicializado con p5.sound');
-      console.log('Escala pentatónica:', this.pentatonicScale.map(f => f.toFixed(1)));
+      this.gain = this.audioContext.createGain();
+      this.gain.gain.setValueAtTime(0, this.audioContext.currentTime);
+
+      this.osc.connect(this.gain);
+      this.gain.connect(this.audioContext.destination);
+
+      console.log('✅ Audio inicializado correctamente');
       return true;
-      
     } catch (error) {
-      console.error('Error al inicializar el audio:', error);
+      console.error('❌ Error inicializando audio:', error);
       return false;
     }
   }
 
   async start() {
-  if (!this.osc) return;
+    if (!this.osc || this.isRunning) return;
 
-  // p5: asegúrate de activar audio tras gesto
-  if (typeof userStartAudio === "function") {
-    try { await userStartAudio(); } catch(e) {}
+    try {
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      this.osc.start();
+      this.isRunning = true;
+      console.log('🎵 Theremin iniciado');
+    } catch (error) {
+      console.error('❌ Error al iniciar theremin:', error);
+    }
   }
 
-  this.osc.start();
-  this.gain.amp(this.baseVolume, 0.1);
-  this.isPlaying = true;
-}
   async stop() {
-  if (!this.osc) return;
-  
-  // Fade out del volumen
-  this.gain.amp(0, 0.1);
-  
-  // Marcamos como no reproduciendo ANTES de detener
-  this.isPlaying = false;
-  
-  // Detengo el oscilador después del fade
-  setTimeout(() => {
-    if (this.osc) {
-      this.osc.stop();
+    if (!this.isRunning) return;
+
+    try {
+      this.gain.gain.setValueAtTime(0, this.audioContext.currentTime);
+      
+      setTimeout(() => {
+        if (this.osc) {
+          this.osc.stop();
+          this.osc.disconnect();
+          this.osc = null;
+        }
+        this.isRunning = false;
+        console.log('🔇 Theremin detenido');
+      }, 100);
+    } catch (error) {
+      console.error('Error al detener theremin:', error);
     }
-  }, 100);
-  
-  // Feedback háptico suave al detener
-  try {
-    await Haptics.impact({ style: ImpactStyle.Light });
-  } catch (error) {
-    console.log('Haptics no disponible en este dispositivo');
   }
-  
-  console.log('Audio pausado');
-}
 
-  // Actualiza los parámetros del audio según la inclinación (llamado cada frame)
-update(tiltX, tiltY) {
-  if (!this.isPlaying || !this.osc) return;
+  update(tiltX, tiltY) {
+    if (!this.osc || !this.gain) return;
 
-  // 1) Evita NaN/Infinity
-  if (!Number.isFinite(tiltX)) tiltX = 0;
-  if (!Number.isFinite(tiltY)) tiltY = 0;
+    const normalizedTiltX = (tiltX + 1) / 2;
+    const normalizedTiltY = (tiltY + 1) / 2;
 
-  // 2) Limita rango
-  tiltX = Math.max(-1, Math.min(1, tiltX));
-  tiltY = Math.max(-1, Math.min(1, tiltY));
+    // Frecuencia cuantizada a escala musical
+    const rawFreq = this.minFreq + normalizedTiltX * (this.maxFreq - this.minFreq);
+    const quantizedFreq = this.quantizeToScale(rawFreq);
+    
+    // NUEVO: Transición suave (exponentialRampToValueAtTime)
+    const now = this.audioContext.currentTime;
+    this.osc.frequency.cancelScheduledValues(now);
+    this.osc.frequency.setValueAtTime(this.osc.frequency.value, now);
+    this.osc.frequency.exponentialRampToValueAtTime(
+      quantizedFreq,
+      now + this.glideTime
+    );
 
-  const normalizedX = (tiltX + 1) / 2;
-  const rawFrequency = this.minFreq + (normalizedX * (this.maxFreq - this.minFreq));
+    // Volumen con transición suave
+    const volume = Math.max(0, Math.min(1, normalizedTiltY));
+    this.gain.gain.cancelScheduledValues(now);
+    this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+    this.gain.gain.linearRampToValueAtTime(
+      volume * 0.3,
+      now + 0.03 // 30ms de transición en volumen
+    );
 
-  const frequency = this.quantizeFrequency(rawFrequency);
+    // Actualizar propiedades públicas
+    this.currentFrequency = quantizedFreq;
+    this.currentVolume = volume;
+    this.currentNote = this.getNoteName(quantizedFreq);
+  }
 
-  // 3) Extra seguridad: freq nunca <= 0
-  const safeFreq = Number.isFinite(frequency) ? Math.max(1, frequency) : 440;
+  quantizeToScale(freq) {
+    if (!this.scaleNotes || this.scaleNotes.length === 0) {
+      return freq;
+    }
 
-  this.targetFrequency = safeFreq;
-  this.osc.freq(safeFreq, 0.01);
+    let closestNote = this.scaleNotes[0];
+    let minDiff = Math.abs(freq - closestNote);
 
-  const normalizedY = (tiltY + 1) / 2;
-  const filterFreq = 400 + (normalizedY * 1400);
+    for (let note of this.scaleNotes) {
+      const diff = Math.abs(freq - note);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestNote = note;
+      }
+    }
 
-  const safeFilter = Number.isFinite(filterFreq) ? Math.max(10, filterFreq) : 2000;
-  this.filter.freq(safeFilter);
-}
+    return closestNote;
+  }
 
+  // NUEVO: Obtener nombre de nota musical
+  getNoteName(freq) {
+    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const A4 = 440;
+    const halfSteps = 12 * Math.log2(freq / A4);
+    const noteIndex = Math.round(halfSteps) % 12;
+    const octave = Math.floor((Math.round(halfSteps) + 57) / 12);
+    
+    return `${noteNames[(noteIndex + 12) % 12]}${octave}`;
+  }
 
-  // Cambia el tipo de onda del oscilador (cada tipo tiene un timbre diferente)
   setWaveType(type) {
-    if (!this.osc) return;
-    if (['sine', 'square', 'sawtooth', 'triangle'].includes(type)) {
-      const wasPlaying = this.isPlaying;
-      if (wasPlaying) {
-        this.osc.stop();
-      }
-      this.osc.setType(type);
-      if (wasPlaying) {
-        this.osc.start();
-        this.osc.freq(this.targetFrequency, 0.01); // Restaura frecuencia
-        this.gain.amp(this.baseVolume, 0.1); // Restaura volumen
-      }
-      console.log('Tipo de onda cambiado a:', type);
+    const validTypes = ['sine', 'square', 'sawtooth', 'triangle'];
+    if (validTypes.includes(type) && this.osc) {
+      this.waveType = type;
+      this.osc.type = type;
+      console.log('🎵 Tipo de onda cambiado a:', type);
     }
   }
 
-  // Limpio los recursos al destruir el objeto
+  setScale(scaleName) {
+    this.currentScale = scaleName;
+    this.scaleNotes = this.getScaleNotes(scaleName);
+    console.log('🎼 Escala cambiada a:', scaleName);
+  }
+
+  getScaleNotes(scaleName) {
+    const baseFreq = 261.63; // C4
+    
+    const scales = {
+      // Escalas mayores - más alegres y consonantes
+      'major': [0, 2, 4, 5, 7, 9, 11, 12],
+      'ionian': [0, 2, 4, 5, 7, 9, 11, 12], // Modo mayor clásico
+      
+      // Escalas menores - más melancólicas pero consonantes
+      'minor': [0, 2, 3, 5, 7, 8, 10, 12],
+      'dorian': [0, 2, 3, 5, 7, 9, 10, 12], // Menor más suave
+      
+      // Pentatónicas - las MÁS consonantes (sin semitonos)
+      'pentatonic_major': [0, 2, 4, 7, 9, 12],
+      'pentatonic_minor': [0, 3, 5, 7, 10, 12],
+      
+      // Blues - consonante pero con carácter
+      'blues': [0, 3, 5, 6, 7, 10, 12],
+      
+      // NUEVAS: Escalas más exóticas pero consonantes
+      'lydian': [0, 2, 4, 6, 7, 9, 11, 12], // Etérea, soñadora
+      'mixolydian': [0, 2, 4, 5, 7, 9, 10, 12], // Alegre, folclórica
+      
+      // Cromática - solo para efectos especiales
+      'chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    };
+
+    const intervals = scales[scaleName] || scales['pentatonic_major'];
+    const notes = [];
+
+    // Generar 3 octavas para más rango
+    for (let octave = 0; octave < 3; octave++) {
+      for (let interval of intervals) {
+        const freq = baseFreq * Math.pow(2, (octave * 12 + interval) / 12);
+        if (freq >= this.minFreq && freq <= this.maxFreq) {
+          notes.push(freq);
+        }
+      }
+    }
+
+    return notes.sort((a, b) => a - b);
+  }
+
+  setEnvironment(style) {
+    if (!style) return;
+    
+    console.log('🌦️ Parámetros ambientales aplicados:', {
+      humedad: style.h01,
+      viento: style.w01,
+      temperatura: style.t01
+    });
+  }
+
   dispose() {
     if (this.osc) {
       this.osc.stop();
-      this.osc.dispose();
-    }
-    if (this.filter) {
-      this.filter.dispose();
+      this.osc.disconnect();
     }
     if (this.gain) {
-      this.gain.dispose();
+      this.gain.disconnect();
+    }
+    if (this.audioContext) {
+      this.audioContext.close();
     }
   }
 }

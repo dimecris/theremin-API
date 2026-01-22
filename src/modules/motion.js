@@ -1,167 +1,174 @@
 /**
- * MÓDULO DE SENSORES DE MOVIMIENTO
- * 
- * Este módulo gestiona la lectura de los sensores de orientación del dispositivo
- * utilizando la API DeviceOrientation nativa del navegador/WebView.
- * 
- * En móvil lee los valores reales del giroscopio.
- * En desktop (desarrollo) simula la inclinación con la posición del ratón.
- * 
- * Los valores de inclinación se normalizan entre -1 y 1 para facilitar
- * su uso en el control de audio y visualización.
- * También gestiona la solicitud de permisos necesarios en iOS.
+ * MÓDULO DE DETECCIÓN DE MOVIMIENTO
+ * Gestiona sensores de orientación y aceleración del dispositivo
  */
 
 export class MotionSensor {
   constructor() {
-    // Almaceno los valores de inclinación normalizados entre -1 y 1
-    this.tiltX = 0; // Inclinación horizontal (izquierda/derecha)
-    this.tiltY = 0; // Inclinación vertical (adelante/atrás)
-    this.isActive = false; // Indica si el sensor está funcionando
-    this.debugMode = false; // true si estamos usando el ratón en lugar del sensor
-    this.sensitivity = 1.0; // Sensibilidad (multiplicador) aplicada a los valores de inclinación
-    this.orientationHandler = null; // Referencia al listener de Capacitor (más específico que "listener")
+    this.tiltX = 0;
+    this.tiltY = 0;
+    this.isDebugMode = false;
+    this.hasPermission = false;
+    this.hasRealSensor = false;
 
-    // Para evitar spam de listeners si se llama init varias veces
-    this._initialized = false;
+    // NUEVO: Detección de shake
+    this.lastAcceleration = { x: 0, y: 0, z: 0 };
+    this.shakeThreshold = 15; // Umbral de aceleración para detectar shake
+    this.shakeCallback = null;
+    this.lastShakeTime = 0;
+    this.shakeCooldown = 1000; // Tiempo mínimo entre shakes (ms)
   }
 
-  // Solicita permisos para acceder a los sensores (necesario en iOS Safari)
-  // IMPORTANTE: En Capacitor, los permisos se manejan automáticamente via Info.plist
+  /**
+   * Solicita permisos de orientación/movimiento (iOS 13+)
+   */
   async requestPermissions() {
-    console.log('🔐 Verificando permisos de sensores...');
-    
-    // Solo para Safari web iOS 13+ existe requestPermission()
-    const reqs = [];
-
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      reqs.push(DeviceMotionEvent.requestPermission());
-    }
-
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      reqs.push(DeviceOrientationEvent.requestPermission());
-    }
-
-    // Si no hay permisos que solicitar (Capacitor o Android)
-    if (reqs.length === 0) {
-      console.log('✅ Permisos gestionados automáticamente');
-      return true;
-    }
-
-    try {
-      const results = await Promise.all(reqs);
-      const granted = results.every(r => r === 'granted');
-      console.log(granted ? '✅ Permisos concedidos' : '❌ Permisos denegados');
-      return granted;
-    } catch (e) {
-      console.warn('⚠️ Error solicitando permisos:', e.message);
-      // En Capacitor esto es OK - los permisos se manejan via Info.plist
-      return true;
-    }
-  }
-
-  // Inicializa el sensor (en desktop usa el ratón, en móvil usa el giroscopio)
-  async init() {
-    // Detecta si está en desktop (sin pantalla táctil)
-    const isDesktop = !('ontouchstart' in window);
-    if (isDesktop) {
-      this.enableMouseDebug();
-      return true;
-    }
-
-    // Previene inicializar múltiples veces
-    if (this._initialized) return true;
-
-    try {
-      // En Capacitor iOS, usamos DeviceOrientation directamente
-      // porque @capacitor/motion no tiene implementación nativa
-      console.log('🎯 Iniciando sensores de orientación...');
-      
-      // IMPORTANTE: Guardar la referencia a la función para poder removerla después
-      this.orientationHandler = (event) => {
-        // event.gamma: inclinación izquierda/derecha (-90 a 90 grados)
-        // event.beta: inclinación adelante/atrás (-180 a 180 grados)
+    if (typeof DeviceOrientationEvent !== 'undefined' && 
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const orientationPermission = await DeviceOrientationEvent.requestPermission();
+        const motionPermission = await DeviceMotionEvent.requestPermission();
         
-        if (event.gamma !== null && event.beta !== null) {
-          const newTiltX = this.clamp(event.gamma / 45, -1, 1);
-          const newTiltY = this.clamp(event.beta / 45, -1, 1);
-          
-          this.tiltX = newTiltX;
-          this.tiltY = newTiltY;
-          
-          // Log solo la primera vez para confirmar que funciona
-          if (!this.isActive) {
-            console.log('✅ Sensores recibiendo datos:', { 
-              gamma: event.gamma.toFixed(2), 
-              beta: event.beta.toFixed(2),
-              tiltX: this.tiltX.toFixed(3),
-              tiltY: this.tiltY.toFixed(3)
-            });
-            this.isActive = true;
-          }
+        this.hasPermission = (orientationPermission === 'granted' && motionPermission === 'granted');
+        
+        if (!this.hasPermission) {
+          console.warn('Permisos de orientación/movimiento denegados');
         }
-      };
-      
-      // Escuchar eventos de orientación del dispositivo
-      window.addEventListener('deviceorientation', this.orientationHandler, true);
-      
-      this._initialized = true;
-      console.log('✅ Sensores de orientación inicializados - esperando movimiento...');
-      return true;
-    } catch (error) {
-      console.error('Error al inicializar sensores:', error);
-      console.error('Detalles del error:', error.message, error.stack);
-      // Fallback a modo debug si falla
-      this.enableMouseDebug();
-      return false;
+        
+        return this.hasPermission;
+      } catch (error) {
+        console.error('Error solicitando permisos:', error);
+        return false;
+      }
     }
+    
+    this.hasPermission = true;
+    return true;
   }
 
-  // Modo debug: usa la posición del ratón para simular la inclinación del dispositivo
-  enableMouseDebug() {
-    this.debugMode = true;
-    this.isActive = true;
+  /**
+   * Inicializa los listeners de orientación y aceleración
+   */
+  async init() {
+    if (!this.hasPermission) {
+      const granted = await this.requestPermissions();
+      if (!granted) return false;
+    }
 
-    // Escucho el movimiento del ratón
-    window.addEventListener('mousemove', (event) => {
-      // Convierto la posición X del ratón (0 a window.innerWidth) a valores -1...1
-      // clientX / innerWidth → 0...1
-      // * 2 → 0...2
-      // - 1 → -1...1
-      this.tiltX = (event.clientX / window.innerWidth) * 2 - 1;
-      
-      // Lo mismo para Y
-      this.tiltY = (event.clientY / window.innerHeight) * 2 - 1;
+    // Listener de orientación
+    window.addEventListener('deviceorientation', (event) => {
+      if (event.gamma !== null && event.beta !== null) {
+        this.hasRealSensor = true;  // ✅ HAY SENSOR REAL (móvil/tablet)
+        this.isDebugMode = false;    // ❌ NO es modo debug
+        
+        const gamma = event.gamma;
+        const beta = event.beta;
+        
+        this.tiltX = Math.max(-90, Math.min(90, gamma)) / 90;
+        this.tiltY = Math.max(-90, Math.min(90, beta)) / 90;
+      }
     });
 
-    console.log('Modo DEBUG activado: mueve el ratón para simular inclinación');
+    // NUEVO: Listener de aceleración para shake
+    window.addEventListener('devicemotion', (event) => {
+      if (event.accelerationIncludingGravity) {
+        const acc = event.accelerationIncludingGravity;
+        
+        // Calcular diferencia de aceleración
+        const deltaX = Math.abs(acc.x - this.lastAcceleration.x);
+        const deltaY = Math.abs(acc.y - this.lastAcceleration.y);
+        const deltaZ = Math.abs(acc.z - this.lastAcceleration.z);
+        
+        // Actualizar última aceleración
+        this.lastAcceleration = { x: acc.x, y: acc.y, z: acc.z };
+        
+        // Detectar shake
+        const now = Date.now();
+        if ((deltaX + deltaY + deltaZ) > this.shakeThreshold) {
+          if (now - this.lastShakeTime > this.shakeCooldown) {
+            this.lastShakeTime = now;
+            this.onShake();
+          }
+        }
+      }
+    });
+
+    // ⏰ Espera 1 segundo para ver si hay sensores
+    setTimeout(() => {
+      if (!this.hasRealSensor) {
+        console.log('Modo DEBUG activado: mueve el ratón para simular inclinación');
+        this.isDebugMode = true;  // ✅ MODO DEBUG (navegador sin sensores)
+        this.setupDebugMode();    // Activa control con ratón
+      }
+    }, 1000);
+
+    return true;
   }
 
-  // Limita un valor entre un mínimo y un máximo
-  clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-  }
-
-  // Getters para obtener los valores de inclinación normalizados
-  getTiltX() { 
-    // Log periódico para debugging
-    if (!this._getTiltXCount) this._getTiltXCount = 0;
-    this._getTiltXCount++;
-    if (this._getTiltXCount % 60 === 1) {
-      console.log('📍 getTiltX() devuelve:', this.tiltX);
+  /**
+   * NUEVO: Método que se ejecuta cuando se detecta shake
+   */
+  onShake() {
+    console.log('🔄 Shake detectado!');
+    if (this.shakeCallback && typeof this.shakeCallback === 'function') {
+      this.shakeCallback();
     }
-    return this.tiltX; 
   }
-  getTiltY() { 
-    return this.tiltY; 
-  }
-  isDebugMode() { return this.debugMode; }
 
-  // Limpia el listener para liberar recursos
+  /**
+   * NUEVO: Registrar callback para shake
+   */
+  onShakeDetected(callback) {
+    this.shakeCallback = callback;
+  }
+
+  /**
+   * Modo debug con ratón (para desarrollo en desktop)
+   */
+  setupDebugMode() {
+    window.addEventListener('mousemove', (event) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      
+      this.tiltX = (event.clientX - centerX) / centerX;
+      this.tiltY = (event.clientY - centerY) / centerY;
+      
+      this.tiltX = Math.max(-1, Math.min(1, this.tiltX));
+      this.tiltY = Math.max(-1, Math.min(1, this.tiltY));
+    });
+
+    // NUEVO: Simular shake con doble click en modo debug
+    let clickCount = 0;
+    let clickTimer = null;
+    
+    window.addEventListener('click', () => {
+      clickCount++;
+      
+      if (clickCount === 1) {
+        clickTimer = setTimeout(() => {
+          clickCount = 0;
+        }, 400);
+      } else if (clickCount === 2) {
+        clearTimeout(clickTimer);
+        clickCount = 0;
+        console.log('🔄 Shake simulado (doble click)');
+        this.onShake();
+      }
+    });
+  }
+
+  getTiltX() {
+    return this.tiltX;
+  }
+
+  getTiltY() {
+    return this.tiltY;
+  }
+
   async dispose() {
-    if (this.orientationHandler) {
-      window.removeEventListener('deviceorientation', this.orientationHandler);
-      console.log('Sensores desconectados');
-    }
+    window.removeEventListener('deviceorientation', null);
+    window.removeEventListener('devicemotion', null);
+    window.removeEventListener('mousemove', null);
+    window.removeEventListener('click', null);
   }
 }

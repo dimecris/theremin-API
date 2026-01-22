@@ -1,107 +1,89 @@
 /**
- * MÓDULO DE ALMACENAMIENTO LOCAL
- * 
- * Este módulo gestiona la persistencia de datos usando LocalStorage del navegador.
- * Guarda la configuración del usuario (tipo de onda, sensibilidad) y estadísticas
- * de uso (número de sesiones, última fecha de uso).
- * 
- * Permite que la configuración se mantenga entre sesiones y que el usuario
- * no tenga que reconfigurar la aplicación cada vez que la abre.
+ * MÓDULO DE ALMACENAMIENTO (localStorage)
+ * Gestiona configuración y estadísticas del usuario
  */
 
 export class ThereminStorage {
   constructor() {
-    this.storageKey = 'theremin_settings';
-    
-    // Defino la configuración por defecto que se usará la primera vez
-    this.defaultSettings = {
-      waveType: 'sine',
-      visualMode: 1,
-      lastSession: null,
-      sessionCount: 0
-    };
-    
-    // Referencia única del objeto settings para mantener consistencia entre módulos
-    this.settings = null;
+    this.STORAGE_KEY = 'theremin_settings';
+    this.STATS_KEY = 'theremin_stats';
   }
 
-  // Carga la configuración desde localStorage. Solo se carga una vez, luego se reutiliza la referencia
   loadSettings() {
-    // Si ya está cargada, devuelve la referencia existente
-    if (this.settings) {
-      return this.settings;
-    }
-    
+    const defaultSettings = {
+      waveType: 'sine',
+      sensitivity: 1.0,
+      visualMode: 1,
+      locationName: '',
+      locationLat: null,
+      locationLon: null,
+      scaleName: 'pentatonic_major',
+      mood: 'Neutral',
+      weatherStyle: null,
+      meteoLastFetch: null
+    };
+
     try {
-      const stored = localStorage.getItem(this.storageKey);
-      
-      if (stored) {
-        //Correccion profesor que evita un NaN en sessionCount
-        //this.settings = JSON.parse(stored);
-        const parsed = JSON.parse(stored);
-        // Merge default settings with stored settings to ensure new keys are present
-        this.settings = { ...this.defaultSettings, ...parsed };
-        console.log('Configuración cargada:', this.settings);
-      } else {
-        this.settings = { ...this.defaultSettings };
-        console.log('No hay configuración guardada, usando valores por defecto');
+      const savedSettings = localStorage.getItem(this.STORAGE_KEY);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        return { ...defaultSettings, ...parsed };
       }
-      
-      return this.settings;
-      
     } catch (error) {
-      console.error('Error al cargar configuración:', error);
-      this.settings = { ...this.defaultSettings };
-      return this.settings;
+      console.error('Error cargando configuración:', error);
     }
+
+    return defaultSettings;
   }
 
-  // Guarda la configuración en localStorage y actualiza la referencia interna
-  saveSettings(settings) {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(settings));
-      this.settings = settings; // Actualiza la referencia
-      console.log('Configuración guardada:', settings);
-      return true;
-    } catch (error) {
-      console.error('Error al guardar configuración:', error);
-      return false;
-    }
-  }
-
-  // Actualiza solo un campo y mantiene la referencia
   updateSetting(key, value) {
-    if (!this.settings) {
-      this.loadSettings();
-    }
-    
-    // Modifica el objeto directamente para mantener la misma referencia
-    this.settings[key] = value;
-    return this.saveSettings(this.settings);
-  }
-
-  // Registra una nueva sesión cada vez que se inicia la aplicación
-  registerSession() {
-    const settings = this.loadSettings();
-    settings.sessionCount++;
-    settings.lastSession = new Date().toISOString();
-    this.saveSettings(settings);
-    
-    console.log(`Sesión ${settings.sessionCount} registrada`);
-    return settings.sessionCount;
-  }
-
-  // Resetea toda la configuración a valores por defecto (no usado actualmente)
-  resetSettings() {
     try {
-      localStorage.removeItem(this.storageKey);
-      this.settings = null; // Elimina la referencia
-      console.log('Configuración reseteada');
-      return true;
+      const currentSettings = this.loadSettings();
+      currentSettings[key] = value;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(currentSettings));
+      console.log(`✅ Setting actualizado: ${key} = ${value}`);
     } catch (error) {
-      console.error('Error al resetear configuración:', error);
-      return false;
+      console.error('Error guardando configuración:', error);
     }
   }
 
+  registerSession() {
+    try {
+      const stats = this.getSessionStats();
+      stats.totalSessions += 1;
+      stats.lastSession = new Date().toISOString();
+      localStorage.setItem(this.STATS_KEY, JSON.stringify(stats));
+      console.log('📊 Sesión registrada:', stats.totalSessions);
+    } catch (error) {
+      console.error('Error registrando sesión:', error);
+    }
+  }
+
+  getSessionStats() {
+    try {
+      const savedStats = localStorage.getItem(this.STATS_KEY);
+      if (savedStats) {
+        return JSON.parse(savedStats);
+      }
+    } catch (error) {
+      console.error('Error cargando estadísticas:', error);
+    }
+
+    // Valores por defecto si no existen
+    return {
+      totalSessions: 0,
+      lastSession: null,
+      firstSession: new Date().toISOString()
+    };
+  }
+
+  clearAll() {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+      localStorage.removeItem(this.STATS_KEY);
+      console.log('🗑️ Almacenamiento limpiado');
+    } catch (error) {
+      console.error('Error limpiando almacenamiento:', error);
+    }
+  }
 }

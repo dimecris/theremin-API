@@ -1,5 +1,3 @@
-# Ignorar el archivo de módulo de tono de audio
-src/modules/audio-tone.js
 # Dependencias
 node_modules/
 

@@ -1,263 +1,329 @@
 /**
  * MÓDULO DE VISUALIZACIÓN CON P5.JS
- * 
- * Este módulo gestiona toda la visualización generativa usando p5.js en modo instancia.
- * El modo instancia permite encapsular p5.js sin contaminar el scope global.
- * 
- * Componentes principales:
- * 1. Sistema de partículas: 100 partículas con movimiento orgánico basado en ruido 
- * 2. Ondas sinusoidales: visualización reactiva a la inclinación del dispositivo
- * 3. HUD informativo: datos sobre modo, audio, sesiones y configuración (solo en debug)
- * 
- * 
+ * Implementa TODOS los efectos meteorológicos visuales
  */
 
-export const createSketch = (motionSensor, thereminAudio, storage) => {
-  // Verifica que p5 esté disponible
-  if (typeof p5 === 'undefined') {
-    console.error('p5.js no está disponible. El sketch no se puede crear.');
-    return null;
-  }
-  
-  console.log('Creando sketch de p5.js...');
-  
-  // Retorno una nueva instancia de p5 en modo instancia
-  // El parámetro "p" es la instancia de p5 con acceso a todas sus funciones
+import { Particle } from './particles.js';
+
+export function createSketch(motionSensor, thereminAudio, storage) {
   return new p5((p) => {
     let particles = [];
-    const numParticles = 100; // 100 partículas en la escena
+    let precipitationParticles = [];
+    let cloudLayers = [];
+    const numParticles = 100;
     let settings;
 
-    // CAMBIADO: setup() ahora es async
-    // Se ejecuta una vez al inicializar
-    p.setup = async () => {
-      // Creo el canvas con las dimensiones de la ventana
+    // Referencias al debug overlay
+    const debugTiltX = document.getElementById('debug-tilt-x');
+    const debugTiltY = document.getElementById('debug-tilt-y');
+    const debugIntensity = document.getElementById('debug-intensity');
+    const debugFrequency = document.getElementById('debug-frequency');
+    const debugWaveType = document.getElementById('debug-wave-type');
+    const debugVolume = document.getElementById('debug-volume');
+    const debugScale = document.getElementById('debug-scale');
+    const debugNote = document.getElementById('debug-note');
+    const debugTemperature = document.getElementById('debug-temperature');
+    const debugHumidity = document.getElementById('debug-humidity');
+    const debugWind = document.getElementById('debug-wind');
+    const debugClouds = document.getElementById('debug-clouds');
+    const debugSessionCount = document.getElementById('debug-session-count');
+    const debugMode = document.getElementById('debug-mode');
+
+    p.setup = () => {
       let cnv = p.createCanvas(p.windowWidth, p.windowHeight);
-      // Vinculo el canvas al contenedor HTML
       cnv.parent('p5-container');
+      settings = storage.loadSettings();
 
-      console.log('🎨 Canvas creado:', p.windowWidth, 'x', p.windowHeight);
-
-      // Espero a que se cargue la configuración
-      settings = await storage.loadSettings();
-
-      // Inicializo todas las partículas
+      // Crear partículas normales con propiedades independientes
       for (let i = 0; i < numParticles; i++) {
-        particles.push(new Particle());
+        particles.push(new Particle(p));
       }
+
+      // Crear capas de nubes
+      for (let i = 0; i < 5; i++) {
+        cloudLayers.push({
+          x: p.random(p.width),
+          y: p.random(p.height),
+          size: p.random(150, 300),
+          speed: p.random(0.1, 0.3)
+        });
+      }
+
+      // Inicializar contador de sesiones
+      updateSessionCount();
     };
 
-    // Se ejecuta continuamente en cada frame (60 fps)
     p.draw = () => {
-      // Verifico que settings esté cargado antes de continuar
-      if (!settings) return;
-      
-      p.background(10, 18); // Fondo semitransparente para efecto de estela
+      settings = storage.loadSettings();
+      const style = settings.weatherStyle || null;
 
-      // Obtengo los valores actuales de inclinación del sensor
-      const tiltX = motionSensor.getTiltX();
-      const tiltY = motionSensor.getTiltY();
+      // 1. FONDO DINÁMICO CON GRADIENTE TÉRMICO
+      drawThermalGradient(style);
 
-      // Aplico la sensibilidad configurada (multiplicador)
-      // Si sensitivity no está definido, usa 1.0 por defecto
-      const sensitivity = settings.sensitivity || 1.0;
-      const adjustedTiltX = tiltX * sensitivity;
-      const adjustedTiltY = tiltY * sensitivity;
+      // 2. NIEBLA (si visibilidad baja)
+      if (style && style.fog01 > 0.3) {
+        drawFog(style.fog01);
+      }
 
-      // Actualizo los parámetros de audio con los valores de inclinación ajustados
-      // Esto hace que el sonido reaccione al movimiento del dispositivo
+      // 3. NUBES (si hay nubosidad)
+      if (style && style.c01 > 0.2) {
+        drawClouds(style.c01);
+      }
+
+      // Aplicar parámetros de entorno al audio
+      if (style && typeof thereminAudio.setEnvironment === 'function') {
+        thereminAudio.setEnvironment(style);
+      }
+
+      let tiltX = motionSensor.getTiltX();
+      let tiltY = motionSensor.getTiltY();
+
+      const sens = Number.isFinite(settings.sensitivity) ? settings.sensitivity : 1.0;
+      let adjustedTiltX = tiltX * sens;
+      let adjustedTiltY = tiltY * sens;
+
+      adjustedTiltX = Math.max(-1, Math.min(1, adjustedTiltX));
+      adjustedTiltY = Math.max(-1, Math.min(1, adjustedTiltY));
+
       thereminAudio.update(adjustedTiltX, adjustedTiltY);
 
-      // Actualizo y dibujo todas las partículas
+      // Actualizar debug overlay
+      updateDebugOverlay(adjustedTiltX, adjustedTiltY);
+
+      // 4. PARTÍCULAS CON COLOR SECUNDARIO - MOVIMIENTO INDEPENDIENTE
       for (let particle of particles) {
-        // update() calcula la nueva posición según la inclinación y ruido Perlin
-        particle.update(adjustedTiltX, adjustedTiltY);
-        // display() dibuja la partícula en el canvas
-        particle.display();
+        particle.update(adjustedTiltX, adjustedTiltY, style);
+        particle.display(style);
       }
 
-      // Dibujo las ondas sinusoidales solo si visualMode está activado (===1)
+      // 5. ONDAS CON TURBULENCIA Y GLOW
       if (settings.visualMode === 1) {
-        drawWaves(adjustedTiltX, adjustedTiltY);
+        drawWavesWithEffects(adjustedTiltX, adjustedTiltY, style);
       }
-      infoDebug(tiltX, tiltY);
+
+      // 6. PRECIPITACIÓN (lluvia/nieve)
+      if (style && style.p01 > 0.05) {
+        updatePrecipitation(style, adjustedTiltY);
+      }
     };
 
-    function infoDebug(tiltX, tiltY) {
-      const debugOverlay = document.getElementById('debug-overlay');
-  
-      // Controlo la visibilidad según debugMode
-      if (motionSensor.isDebugMode()) {
-        if (!debugOverlay.classList.contains('visible')) {
-          debugOverlay.classList.add('visible');
-        }
-      
-        // Actualizar Debug Overlay en tiempo real
-        document.getElementById('debug-tilt-x').textContent = tiltX.toFixed(3);// Sensibilidad con 2 decimales
-        document.getElementById('debug-tilt-y').textContent = tiltY.toFixed(3);
-
-        // Intensidad total como magnitud del vector (raíz cuadrada de la suma de cuadrados)
-        document.getElementById('debug-intensity').textContent = (Math.sqrt(tiltX * tiltX + tiltY * tiltY)).toFixed(3);
-
-        // Datos de audio. obtengo frecuencia objetivo del ThereminAudio o 0 si no está definido
-        document.getElementById('debug-frequency').textContent = (thereminAudio.targetFrequency || 0).toFixed(0);
-        
-        document.getElementById('debug-wave-type').textContent = settings.waveType; 
-        document.getElementById('debug-session-count').textContent = storage.loadSettings().sessionCount;
-    
-      }else {
-        debugOverlay.classList.remove('visible');
-      } 
-
+    // NUEVA FUNCIÓN: Actualizar contador de sesiones
+    function updateSessionCount() {
+      if (debugSessionCount) {
+        const sessionStats = storage.getSessionStats();
+        debugSessionCount.textContent = sessionStats.totalSessions;
+      }
     }
 
-    // Función que dibuja las ondas sinusoidales animadas
-    function drawWaves(tiltX, tiltY) {
-      p.noFill(); // Sin relleno, solo contorno
-      p.stroke(100, 200, 255, 100); // Color azul semitransparente
-      p.strokeWeight(2); // Grosor de la línea
+    // NUEVA FUNCIÓN: Actualizar debug overlay
+    function updateDebugOverlay(tiltX, tiltY) {
+      // MOTION
+      if (debugTiltX) debugTiltX.textContent = tiltX.toFixed(3);
+      if (debugTiltY) debugTiltY.textContent = tiltY.toFixed(3);
+      
+      const intensity = Math.sqrt(tiltX * tiltX + tiltY * tiltY);
+      if (debugIntensity) debugIntensity.textContent = intensity.toFixed(3);
 
-      // Dibujo 3 ondas superpuestas
+      // AUDIO - Leer directamente de thereminAudio
+      if (debugFrequency) {
+        debugFrequency.textContent = (thereminAudio.currentFrequency || 0).toFixed(1);
+      }
+      
+      if (debugWaveType) {
+        debugWaveType.textContent = thereminAudio.waveType || 'sine';
+      }
+      
+      if (debugVolume) {
+        debugVolume.textContent = (thereminAudio.currentVolume || 0).toFixed(2);
+      }
+      
+      if (debugScale) {
+        debugScale.textContent = thereminAudio.currentScale || 'pentatonic_major';
+      }
+      
+      if (debugNote) {
+        debugNote.textContent = thereminAudio.currentNote || '-';
+      }
+
+      // CLIMA - Leer de weatherStyle y settings
+      const weatherStyle = settings.weatherStyle;
+      
+      if (debugTemperature && weatherStyle && weatherStyle.rawData) {
+        debugTemperature.textContent = weatherStyle.rawData.temperature.toFixed(1);
+      }
+      
+      if (debugHumidity && weatherStyle && weatherStyle.rawData) {
+        debugHumidity.textContent = weatherStyle.rawData.humidity;
+      }
+      
+      if (debugWind && weatherStyle && weatherStyle.rawData) {
+        debugWind.textContent = weatherStyle.rawData.windSpeed.toFixed(1);
+      }
+      
+      if (debugClouds && weatherStyle && weatherStyle.rawData) {
+        debugClouds.textContent = weatherStyle.rawData.cloudCover;
+      }
+
+      // SISTEMA
+      if (debugMode) {
+        debugMode.textContent = motionSensor.isDebugMode ? 'DEBUG (mouse)' : 'SENSOR (device)';
+      }
+
+      // ACTUALIZAR SESIONES
+      updateSessionCount();
+    }
+
+    // FUNCIÓN 1: Gradiente térmico según temperatura
+    function drawThermalGradient(style) {
+      if (!style || !style.gradientStart || !style.gradientEnd) {
+        p.background(0);
+        return;
+      }
+
+      for (let y = 0; y < p.height; y++) {
+        const inter = p.map(y, 0, p.height, 0, 1);
+        const c = p.lerpColor(
+          p.color(style.gradientStart),
+          p.color(style.gradientEnd),
+          inter
+        );
+        p.stroke(c);
+        p.line(0, y, p.width, y);
+      }
+    }
+
+    // FUNCIÓN 2: Niebla según visibilidad
+    function drawFog(fogIntensity) {
+      const alpha = p.map(fogIntensity, 0, 1, 0, 150);
+      p.fill(200, 200, 220, alpha);
+      p.noStroke();
+      p.rect(0, 0, p.width, p.height);
+    }
+
+    // FUNCIÓN 3: Nubes según nubosidad
+    function drawClouds(cloudCover) {
+      const opacity = p.map(cloudCover, 0, 1, 0, 80);
+      p.noStroke();
+      p.fill(50, 50, 70, opacity);
+
+      for (let cloud of cloudLayers) {
+        cloud.x += cloud.speed;
+        if (cloud.x > p.width + cloud.size) {
+          cloud.x = -cloud.size;
+        }
+        p.ellipse(cloud.x, cloud.y, cloud.size, cloud.size * 0.6);
+      }
+    }
+
+    // FUNCIÓN 4: Ondas con turbulencia por viento y glow por humedad
+    function drawWavesWithEffects(tiltX, tiltY, style) {
+      if (!style) return;
+
+      // Configurar glow según humedad
+      const glowRadius = p.map(style.h01, 0, 1, 5, 40);
+      const strokeWeight = p.map(style.h01, 0, 1, 1, 4);
+      
+      p.drawingContext.shadowBlur = glowRadius;
+      p.drawingContext.shadowColor = style.primary || '#00D1FF';
+      
+      p.noFill();
+      p.strokeWeight(strokeWeight);
+      p.stroke(style.primary || '#00D1FF');
+
+      // Turbulencia por viento
+      const turbulence = style.w01 || 0;
+
+      // OBTENER TIPO DE ONDA DESDE SETTINGS
+      const waveType = settings.waveType || 'sine';
+
       for (let i = 0; i < 3; i++) {
-        p.beginShape(); // Inicio una forma
-        // Recorro horizontalmente el canvas cada 10 píxeles
+        p.beginShape();
         for (let x = 0; x < p.width; x += 10) {
-          // Amplitud varía con la inclinación vertical (tiltY)
           let amplitude = 50 + tiltY * 50;
-          // Frecuencia varía con la inclinación horizontal (tiltX)
           let frequency = 0.01 + tiltX * 0.01;
-          // Cada onda tiene un offset vertical diferente
           let offset = i * 50;
           
-          // Calculo la altura Y usando seno
-          // x * frequency: controla cuántas ondas caben en pantalla
-          // p.millis() * 0.001: anima la onda a lo largo del tiempo
-          // amplitude: controla la altura de la onda
-          let y;
-          switch(settings.waveType) {
-            case 'sine':
-            // Onda sinusoidal (suave)
-              y = p.height / 2 + offset + 
-                  p.sin(x * frequency + p.millis() * 0.001) * amplitude;
-            break;
+          // Añadir ruido por turbulencia
+          const noiseAmount = turbulence * 30;
+          const noiseValue = p.noise(x * 0.01, p.millis() * 0.001 + i) * noiseAmount;
+          
+          let waveValue;
+          const phase = x * frequency + p.millis() * 0.001;
 
+          // APLICAR TIPO DE ONDA SEGÚN SETTINGS
+          switch(waveType) {
+            case 'sine':
+              waveValue = p.sin(phase);
+              break;
             case 'square':
-            // Onda cuadrada (saltos bruscos)
-            const squareValue = p.sin(x * frequency + p.millis() * 0.001) > 0 ? 1 : -1;
-            y = p.height / 2 + offset + squareValue * amplitude;
-            break;
-            
+              waveValue = p.sin(phase) > 0 ? 1 : -1;
+              break;
             case 'sawtooth':
-            // Onda diente de sierra (rampa)
-            const sawValue = ((x * frequency + p.millis() * 0.001) % p.TWO_PI) / p.TWO_PI * 2 - 1;
-            y = p.height / 2 + offset + sawValue * amplitude;
-            break;
-            
+              waveValue = ((phase % p.TWO_PI) / p.TWO_PI) * 2 - 1;
+              break;
             case 'triangle':
-            // Onda triangular (zigzag suave)
-            const triValue = Math.abs(((x * frequency + p.millis() * 0.001) % p.TWO_PI) / p.PI - 1) * 2 - 1;
-            y = p.height / 2 + offset + triValue * amplitude;
-            break;
-            
+              const sawValue = ((phase % p.TWO_PI) / p.PI);
+              waveValue = Math.abs(sawValue - 1) * 2 - 1;
+              break;
             default:
-            // Por defecto, sine
-            y = p.height / 2 + offset + 
-                p.sin(x * frequency + p.millis() * 0.001) * amplitude;
+              waveValue = p.sin(phase);
           }
           
-          // Añado el punto a la forma
+          let y = p.height / 2 + offset + 
+                  waveValue * amplitude +
+                  noiseValue;
+          
           p.vertex(x, y);
-        }   
-        p.endShape(); // Cierro la forma
+        }
+        p.endShape();
+      }
+
+      // Resetear shadow
+      p.drawingContext.shadowBlur = 0;
+    }
+
+    // FUNCIÓN 5: Sistema de precipitación
+    function updatePrecipitation(style, pitch) {
+      const isSnow = style.isSnow || false;
+      const intensity = style.p01;
+
+      // Crear nuevas partículas de precipitación
+      if (p.random() < intensity * 0.5) {
+        precipitationParticles.push({
+          x: p.random(p.width),
+          y: -10,
+          speed: isSnow ? p.random(1, 3) : p.random(5, 15),
+          size: isSnow ? p.random(3, 6) : p.random(1, 3),
+          isSnow: isSnow
+        });
+      }
+
+      // Actualizar y dibujar precipitación
+      for (let i = precipitationParticles.length - 1; i >= 0; i--) {
+        const drop = precipitationParticles[i];
+        drop.y += drop.speed + Math.abs(pitch) * 2;
+
+        if (drop.isSnow) {
+          // Nieve
+          p.fill(255, 255, 255, 200);
+          p.noStroke();
+          p.ellipse(drop.x, drop.y, drop.size);
+        } else {
+          // Lluvia
+          p.stroke(150, 180, 220, 220);
+          p.strokeWeight(drop.size);
+          p.line(drop.x, drop.y, drop.x, drop.y + drop.size * 4);
+        }
+
+        // Eliminar si sale de pantalla
+        if (drop.y > p.height) {
+          precipitationParticles.splice(i, 1);
+        }
       }
     }
 
-    // p.windowResized() se ejecuta cuando se redimensiona la ventana
     p.windowResized = () => {
-      // Reajusto el canvas a las nuevas dimensiones
       p.resizeCanvas(p.windowWidth, p.windowHeight);
     };
-
-    // Clase que define el comportamiento de cada partícula
-    class Particle {
-      constructor() {
-        // Inicializo la partícula con posición aleatoria y velocidad cero
-        this.reset();
-        // Cada partícula tiene su propio factor de dispersión (0.5 a 1.5)
-        // Esto hace que respondan diferente a la inclinación
-        this.disperseFactor = p.random(0.8, 1.2); // Menos variación
-        // Offsets únicos para el ruido suave (movimiento orgánico)
-        this.noiseOffsetX = p.random(1000);
-        this.noiseOffsetY = p.random(1000);
-      }
-
-      reset() {
-        // Posición inicial aleatoria en el canvas
-        // Protección contra NaN si el canvas aún no tiene tamaño
-        this.x = p.width > 0 ? p.random(p.width) : p.random(window.innerWidth);
-        this.y = p.height > 0 ? p.random(p.height) : p.random(window.innerHeight);
-        // Velocidad inicial aleatoria para mayor dispersión
-        this.vx = 0;
-        this.vy = 0;
-        // Tamaño aleatorio entre 2 y 8 píxeles
-        this.size = p.random(3, 6);
-        this.alpha = 255; // Opacidad máxima
-      }
-
-      // Actualizo la posición de la partícula cada frame
-      update(tiltX, tiltY) {
-        // Protección contra NaN - usa 0 si tilt no está definido
-        const safeTiltX = isNaN(tiltX) ? 0 : tiltX;
-        const safeTiltY = isNaN(tiltY) ? 0 : tiltY;
-        
-        // Ruido Perlin SUAVE solo para dar variación
-        const noiseX = (p.noise(this.noiseOffsetX) - 0.5) * 0.3; // Muy sutil
-        const noiseY = (p.noise(this.noiseOffsetY) - 0.5) * 0.3;
-        
-        this.noiseOffsetX += 0.005; // Más lento
-        this.noiseOffsetY += 0.005;
-        
-        // PRINCIPAL: La inclinación controla el movimiento
-        // Cada partícula responde ligeramente diferente (disperseFactor)
-        this.vx += (safeTiltX * this.disperseFactor + noiseX) * 0.5;
-        this.vy += (safeTiltY * this.disperseFactor + noiseY) * 0.5;
-
-        // Fricción moderada para que se muevan fluido pero controlado
-        this.vx *= 0.92;
-        this.vy *= 0.92;
-
-        // Actualizo posición
-        this.x += this.vx;
-        this.y += this.vy;
-
-        // REBOTES SIMPLES Y CLAROS
-        if (this.x <= 0) {
-          this.x = 0;
-          this.vx = -this.vx * 0.6; // Rebote con pérdida de energía
-        }
-        if (this.x >= p.width) {
-          this.x = p.width;
-          this.vx = -this.vx * 0.6;
-        }
-        
-        if (this.y <= 0) {
-          this.y = 0;
-          this.vy = -this.vy * 0.6;
-        }
-        if (this.y >= p.height) {
-          this.y = p.height;
-          this.vy = -this.vy * 0.6;
-        }
-      }
-
-      // Dibujo la partícula en el canvas
-      display() {
-        p.noStroke(); // Sin borde
-        p.fill(255, 100, 150, this.alpha); // Color rosa semitransparente
-        p.ellipse(this.x, this.y, this.size); // Dibujo un círculo
-      }
-    }
-   
   });
-  
-};
+}

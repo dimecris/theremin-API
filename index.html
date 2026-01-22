@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Theremin Glitch</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Theremin Glitch</title>
+
+  <!-- Evita el 404 de favicon.ico -->
+  <link rel="icon" href="data:," />
 </head>
+
 <body>
   <div id="p5-container"></div>
-
 
   <!-- UI Overlay -->
   <div class="ui-overlay">
@@ -15,48 +18,80 @@
     <div class="top-area">
       <h1 class="title">THEREMIN</h1>
       <p class="subtitle" id="subtitle">Move your device</p>
+
+      <!-- PR2: Estado contextual (Lugar + Escala) -->
+      <div class="env-bar" aria-label="Estado ambiental">
+        <span>📍 <strong id="location-label">Palma</strong></span>
+        <span>·</span>
+        <span>🎼 <strong id="scale-label">pentatonic_major</strong></span>
+      </div>
     </div>
 
     <!-- Center Area - Main Button -->
     <div class="center-area">
-      <button id="startBtn" class="glassmorphic-button">
+      <button id="start-btn" class="glassmorphic-button" type="button">
         <div class="button-glow"></div>
         <span class="button-text">Start Audio</span>
         <div class="active-indicator" id="active-indicator"></div>
       </button>
     </div>
 
-    <!-- Bottom Area - Wave Selector 
-     Se usa el inglés porque la nomenclatura de tipos de onda es estándar en síntesis de audio -->
+    <!-- Bottom Area - Wave Selector
+      Se usa el inglés porque la nomenclatura de tipos de onda es estándar en síntesis de audio -->
     <div class="bottom-area" id="controls-container">
       <div class="wave-selector">
-        <button id="waveBtn1" class="wave-button active" data-wave="sine">Sine</button>
-        <button id="waveBtn2" class="wave-button" data-wave="square">Square</button>
-        <button id="waveBtn3" class="wave-button" data-wave="sawtooth">Saw</button>
-        <button id="waveBtn4" class="wave-button" data-wave="triangle">Triangle</button>
+        <button id="waveBtn1" class="wave-button active" data-wave="sine" type="button">Sine</button>
+        <button id="waveBtn2" class="wave-button" data-wave="square" type="button">Square</button>
+        <button id="waveBtn3" class="wave-button" data-wave="sawtooth" type="button">Saw</button>
+        <button id="waveBtn4" class="wave-button" data-wave="triangle" type="button">Triangle</button>
       </div>
-      
+
+      <!-- PR2: Entrada de ciudad (Open-Meteo) -->
+      <div class="city-search" aria-label="Buscar ciudad">
+        <input
+          id="city-input"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          autocapitalize="words"
+          placeholder="Introduce una ciudad (ej. Palma)"
+        />
+        <button id="city-apply" class="city-apply-btn" type="button">Aplicar</button>
+      </div>
     </div>
   </div>
 
   <!-- Debug Overlay -->
   <div class="debug-overlay" id="debug-overlay">
+    <div><strong>MOTION</strong></div>
     <div>Tilt X: <span id="debug-tilt-x">0.000</span></div>
     <div>Tilt Y: <span id="debug-tilt-y">0.000</span></div>
     <div>Intensidad: <span id="debug-intensity">0.000</span></div>
-    <div>Frecuencia: <span id="debug-frequency">0</span> Hz</div>
+    
+    <div style="margin-top: 10px;"><strong>AUDIO</strong></div>
+    <div>Frecuencia: <span id="debug-frequency">0.0</span> Hz</div>
     <div>Tipo de Onda: <span id="debug-wave-type">sine</span></div>
-    <div>Conteo de Sesiones: <span id="debug-session-count">0</span></div>
+    <div>Volumen: <span id="debug-volume">0.0</span></div>
+    <div>Escala: <span id="debug-scale">pentatonic_major</span></div>
+    <div>Nota: <span id="debug-note">-</span></div>
+    
+    <div style="margin-top: 10px;"><strong>CLIMA</strong></div>
+    <div>Temperatura: <span id="debug-temperature">-</span>°C</div>
+    <div>Humedad: <span id="debug-humidity">-</span>%</div>
+    <div>Viento: <span id="debug-wind">-</span> km/h</div>
+    <div>Nubes: <span id="debug-clouds">-</span>%</div>
+    
+    <div style="margin-top: 10px;"><strong>SISTEMA</strong></div>
+    <div>Sesiones: <span id="debug-session-count">0</span></div>
+    <div>Modo: <span id="debug-mode">-</span></div>
   </div>
 
+  <!-- Scripts p5 ANTES del module -->
+  <!-- Rutas relativas (mejor en iOS / build) -->
+  <script src="./p5_v2.js"></script>
+  <script src="./p5.sound_v2.min.js"></script>
 
-
-  
-  <!--Scripts p5 ANTES del module -->
-  <script src="/p5_v2.js"></script>
-  <script src="/p5.sound_v2.min.js"></script>
-  
-  <!--  código module AL FINAL -->
+  <!-- Código module AL FINAL -->
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
