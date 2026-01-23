@@ -11,8 +11,8 @@
   
   <title>Theremin Glitch</title>
   <link rel="icon" href="data:," />
-  <script type="module" crossorigin src="/assets/index-DQowXJrO.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-Bnuu_jQS.css">
+  <script type="module" crossorigin src="/assets/index-CL_kctxe.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-D7_wpL9p.css">
 </head>
 
 <body>
@@ -22,45 +22,138 @@
   <div class="ui-overlay">
     <!-- Botón Hamburguesa -->
     <button id="hamburger-btn" class="hamburger-btn" aria-label="Abrir menú">
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
+      <!-- INFO (círculo + “i”) -->
+      <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="9"
+                fill="none" stroke="currentColor" stroke-width="0.8"/>
+        <path d="M12 10.8v6"
+              fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+        <circle cx="12" cy="7.6" r="0.6"
+                fill="currentColor"/>
+      </svg>
+
     </button>
 
     <!-- Menú Lateral -->
     <nav id="side-menu" class="side-menu">
       <div class="menu-header">
-        <h2>Menú</h2>
-        <button id="close-menu-btn" class="close-btn" aria-label="Cerrar menú">×</button>
+        
+        <button id="close-menu-btn" class="close-btn" aria-label="Cerrar menú">
+          <!-- CLOSE / X fina -->
+        <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 6l12 12M18 6l-12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="0.8"
+                stroke-linecap="round"/>
+        </svg>
+
+        </button>
+        <h1 class="title">THEREMIN</h1>
+      <p class="subtitle" id="subtitle">Mueve tu dispositivo</p>
+      <ul class="menu-list">
       </div>
       
-      <ul class="menu-list">
-        <li>
-          <button id="toggle-debug-menu" class="menu-item">
-            <span class="menu-icon">🐛</span>
-            <span>Toggle Debug Info</span>
-          </button>
-        </li>
-        <li>
-          <button id="toggle-waves-menu" class="menu-item">
-            <span class="menu-icon">🌊</span>
-            <span id="waves-menu-status">Ondas: ON</span>
-          </button>
-        </li>
-        <li>
-          <button id="reset-settings-menu" class="menu-item">
-            <span class="menu-icon">🔄</span>
-            <span>Resetear Configuración</span>
-          </button>
-        </li>
-        <li class="menu-divider"></li>
-        <li class="menu-info">
-          <span class="menu-icon">ℹ️</span>
-          <div>
-            <p><strong>Theremin Meteorológico</strong></p>
-            <p>v1.0 - UOC 2026</p>
+      
+        
+        <!-- INSTRUCCIONES -->
+        <li class="menu-section">
+          <div class="menu-instructions">
+            <div class="instruction-item">
+              <span class="instruction-icon">
+              <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M14 4v10.8a2.4 2.4 0 1 1-1.1-2V6.2l7-2V12.8a2.4 2.4 0 1 1-1.1-2V4z"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+  
+              </span>
+
+              <p><strong>Mueve el dispositivo</strong> para controlar tono y volumen del theremin</p>
+            </div>
+            
+            <div class="instruction-item">
+              <span class="instruction-icon">
+              <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <!-- phone -->
+                <rect x="8" y="3" width="8" height="18" rx="2"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                <path d="M11 18h2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <!-- shake marks -->
+                <path d="M5.2 8.2l-1.6-1.6M5.2 15.8l-1.6 1.6"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M18.8 8.2l1.6-1.6M18.8 15.8l1.6 1.6"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+              </span>
+              <p><strong>Agita fuertemente</strong> para cambiar a una ciudad aleatoria</p>
+            </div>
+            
+            <div class="instruction-item">
+              <span class="instruction-icon">
+              <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M7.5 14.5H17a3.8 3.8 0 0 0 .3-7.6 5.2 5.2 0 0 0-10.3 1.7A3.4 3.4 0 0 0 7.5 14.5z"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M7 17l-1 2M11 17l-1 2M15 17l-1 2"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M19 7.2a2.6 2.6 0 0 0-2.6-2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+  
+              </span>
+              <p><strong>El clima adapta</strong> la escala musical, tipo de onda y colores visuales</p>
+            </div>
+            
+            <div class="instruction-item">
+              <span class="instruction-icon">
+              <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M10 14.3V5.3a2 2 0 1 1 4 0v9a3.8 3.8 0 1 1-4 0z"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 7v7.8" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+
+              </span>
+              <p><strong>Temperatura:</strong> Colores fríos (azul) o cálidos (rojo/naranja)</p>
+            </div>
+            
+            <div class="instruction-item">
+              <span class="instruction-icon">
+              <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 18a2.3 2.3 0 1 1-1-1.9V6h9v8.6a2.3 2.3 0 1 1-1-1.9V8H8"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+  
+              </span>
+              <p><strong>Condiciones:</strong> Tormenta → Blues, Nieve → Lydian, Lluvia → Dorian</p>
+            </div>
+            
+            <div class="instruction-item">
+              <span class="instruction-icon">
+              <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 16c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 20c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+
+              </span>
+              <p><strong>Humedad:</strong> Aumenta el brillo de las ondas visuales</p>
+            </div>
+            
+            <div class="instruction-item">
+              <span class="instruction-icon">
+              <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 8h10a2 2 0 1 0-2-2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M3 12h14a2 2 0 1 1-2 2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M3 16h8a2 2 0 1 0-2 2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+
+              </span>
+              <p><strong>Viento:</strong> Añade turbulencia a las formas de onda</p>
+            </div>
           </div>
         </li>
+        
+        
+        
       </ul>
     </nav>
 
@@ -69,8 +162,7 @@
 
     <!-- Top Area - Title -->
     <div class="top-area">
-      <h1 class="title">THEREMIN</h1>
-      <p class="subtitle" id="subtitle">Move your device</p>
+      
 
       <!-- PR2: Estado contextual (Lugar + Escala) -->
       <div class="env-bar" aria-label="Estado ambiental">

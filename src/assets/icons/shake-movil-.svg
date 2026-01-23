@@ -1,0 +1,11 @@
+<svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <!-- phone -->
+                <rect x="8" y="3" width="8" height="18" rx="2"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                <path d="M11 18h2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <!-- shake marks -->
+                <path d="M5.2 8.2l-1.6-1.6M5.2 15.8l-1.6 1.6"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M18.8 8.2l1.6-1.6M18.8 15.8l1.6 1.6"
+                      fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

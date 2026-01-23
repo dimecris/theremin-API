@@ -8,138 +8,208 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
+
+  <!-- CSS CRÍTICO INLINE (evita FOUC) -->
+  <style>
+    /* Loader hasta que cargue todo */
+    html {
+      background: linear-gradient(135deg, #0A1929, #1A0033);
+    }
+    
+    body {
+      margin: 0;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s ease;
+    }
+    
+    body.ready {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    /* Tamaño fijo para iconos (evita que se vean grandes) */
+    .iconmoonish {
+      width: 2rem !important;
+      height: 2rem !important;
+      max-width: 2rem !important;
+      max-height: 2rem !important;
+      display: inline-block !important;
+    }
+  </style>
   
   <title>Theremin Glitch</title>
   <link rel="icon" href="data:," />
 </head>
 
 <body>
-  <div id="p5-container"></div>
-
-  <!-- UI Overlay -->
-  <div class="ui-overlay">
-    <!-- Botón Hamburguesa -->
-    <button id="hamburger-btn" class="hamburger-btn" aria-label="Abrir menú">
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-    </button>
-
-    <!-- Menú Lateral -->
-    <nav id="side-menu" class="side-menu">
-      <div class="menu-header">
-        <h2>Menú</h2>
-        <button id="close-menu-btn" class="close-btn" aria-label="Cerrar menú">×</button>
+  <!-- ========================================== -->
+  <!-- PANTALLA DE BIENVENIDA -->
+  <!-- ========================================== -->
+  <div id="welcome-screen" class="welcome-screen">
+    <div class="welcome-content">
+      <h1 class="welcome-title">THEREMIN METEREOLÓGICO</h1>
+     
+      <p class="welcome-tagline">Convierte el clima en música</p>
+      
+      <div class="welcome-instructions">
+        <div class="welcome-instruction">
+          <span class="instruction-icon">
+            <img src="src/assets/icons/move-movil.svg" alt="Icono de inclinación" class="iconmoonish" />
+          </span>
+          <div>
+            <h3>Mueve el dispositivo</h3>
+            <p>Inclina para cambiar tono y volumen</p>
+          </div>
+        </div>
+        
+        <div class="welcome-instruction">
+          <span class="instruction-icon">
+            <img src="src/assets/icons/shake-movil.svg" alt="Icono de agitar" class="iconmoonish" />
+          </span>
+          <div>
+            <h3>Agita fuertemente</h3>
+            <p>Cambia a una ciudad aleatoria</p>
+          </div>
+        </div>
+        
+        <div class="welcome-instruction">
+          <span class="instruction-icon">
+            <img src="src/assets/icons/weather.svg" alt="Icono de clima" class="iconmoonish" />
+          </span>
+          <div>
+            <h3>El clima adapta</h3>
+            <p>Escalas, ondas y colores según el tiempo</p>
+          </div>
+        </div>
       </div>
       
-      <ul class="menu-list">
-        <li>
-          <button id="toggle-debug-menu" class="menu-item">
-            <span class="menu-icon">🐛</span>
-            <span>Toggle Debug Info</span>
-          </button>
-        </li>
-        <li>
-          <button id="toggle-waves-menu" class="menu-item">
-            <span class="menu-icon">🌊</span>
-            <span id="waves-menu-status">Ondas: ON</span>
-          </button>
-        </li>
-        <li>
-          <button id="reset-settings-menu" class="menu-item">
-            <span class="menu-icon">🔄</span>
-            <span>Resetear Configuración</span>
-          </button>
-        </li>
-        <li class="menu-divider"></li>
-        <li class="menu-info">
-          <span class="menu-icon">ℹ️</span>
-          <div>
-            <p><strong>Theremin Meteorológico</strong></p>
-            <p>v1.0 - UOC 2026</p>
-          </div>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- Overlay para cerrar el menú -->
-    <div id="menu-overlay" class="menu-overlay"></div>
-
-    <!-- Top Area - Title -->
-    <div class="top-area">
-      <h1 class="title">THEREMIN</h1>
-      <p class="subtitle" id="subtitle">Move your device</p>
-
-      <!-- PR2: Estado contextual (Lugar + Escala) -->
-      <div class="env-bar" aria-label="Estado ambiental">
-        <span><strong id="location-label">Palma</strong></span>
-        <span>–</span>
-        <span> <strong id="scale-label">pentatonic_major</strong></span>
-      </div>
-    </div>
-
-    <!-- Center Area - Main Button -->
-    <div class="center-area">
-      <button id="start-btn" class="glassmorphic-button" type="button">
+      <button id="welcome-start-btn" class="glassmorphic-button" type="button">
         <div class="button-glow"></div>
-        <span class="button-text">Start Audio</span>
-        <div class="active-indicator" id="active-indicator"></div>
+        <span class="button-text">
+          <img src="src/assets/icons/play.svg" alt="Icono de clima" class="iconmoonish" />
+        </span>
       </button>
     </div>
+  </div>
 
-    <!-- Bottom Area - Wave Selector
-      Se usa el inglés porque la nomenclatura de tipos de onda es estándar en síntesis de audio -->
-    <div class="bottom-area" id="controls-container">
-      <div class="wave-selector">
-        <button id="waveBtn1" class="wave-button active" data-wave="sine" type="button">Sine</button>
-        <button id="waveBtn2" class="wave-button" data-wave="square" type="button">Square</button>
-        <button id="waveBtn3" class="wave-button" data-wave="sawtooth" type="button">Saw</button>
-        <button id="waveBtn4" class="wave-button" data-wave="triangle" type="button">Triangle</button>
+  <!-- ========================================== -->
+  <!-- INTERFAZ PRINCIPAL (oculta al inicio) -->
+  <!-- ========================================== -->
+  <div id="main-interface" class="main-interface hidden">
+    <!-- Contenedor de p5.js -->
+    <div id="p5-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+      <!-- Botón Hamburguesa -->
+      <button id="hamburger-btn" class="hamburger-btn" aria-label="Abrir menú">
+        <!-- INFO (círculo + "i") -->
+        <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="9"
+                  fill="none" stroke="currentColor" stroke-width="0.8"/>
+          <path d="M12 10.8v6"
+                fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+          <circle cx="12" cy="7.6" r="0.6"
+                  fill="currentColor"/>
+        </svg>
+      </button>
+
+      <!-- Overlay para cerrar el menú -->
+      <div id="menu-overlay" class="menu-overlay"></div>
+
+      <!-- Top Area - Title -->
+      <div class="top-area">
+        <!-- PR2: Estado contextual (Lugar + Escala) -->
+        <div class="env-bar" aria-label="Estado ambiental">
+          <span><strong id="location-label">Palma</strong></span>
+          <span>–</span>
+          <span><strong id="scale-label">pentatonic_major</strong></span>
+        </div>
       </div>
+      <!-- Botón Start/Stop -->
+          <div class="center-area">
+            <button id="start-btn" class="glassmorphic-button" type="button">
+              <div class="button-glow"></div>
+              <span class="button-text">Play</span>
+              <div class="active-indicator" id="active-indicator"></div>
+            </button>
+          </div>
 
-      <!-- PR2: Entrada de ciudad (Open-Meteo) -->
-      <div class="city-search" aria-label="Buscar ciudad">
-        <input
-          id="city-input"
-          type="text"
-          inputmode="text"
-          autocomplete="off"
-          autocapitalize="words"
-          placeholder="Introduce una ciudad (ej. Palma)"
-        />
+      <!-- Bottom Area - Controles adicionales -->
+      <div class="bottom-area" id="controls-container">
+        <nav class="dock" aria-label="Barra de herramientas">
+          <button id="more-settings-dock-btn" class="glassmorphic-button" aria-label="Más ajustes" type="button">
+            <div class="button-glow"></div>
+            <span class="button-text"></span>
+          </button>
+        </nav>
 
-          <button id="city-apply" class="wave-button active" type="button">Aplicar</button>
+        <div class="more-settings-dock" id="more-settings-dock" aria-label="Ajustes adicionales">
+          <!-- Wave Selector -->
+          <div class="wave-selector">
+            <button id="waveBtn1" class="wave-button active" data-wave="sine" type="button">Sine</button>
+            <button id="waveBtn2" class="wave-button" data-wave="square" type="button">Square</button>
+            <button id="waveBtn3" class="wave-button" data-wave="sawtooth" type="button">Saw</button>
+            <button id="waveBtn4" class="wave-button" data-wave="triangle" type="button">Triangle</button>
+          </div>
+
+          <!-- PR2: Entrada de ciudad (Open-Meteo) -->
+          <div class="city-search" aria-label="Buscar ciudad">
+            <input
+              id="city-input"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              autocapitalize="words"
+              placeholder="Introduce una ciudad (ej. Palma)"
+            />
+            <button id="city-apply" class="wave-button active" type="button">Aplicar</button>
+          </div>
+        </div>
       </div>
+    </div>
+
+    <!-- Debug Overlay -->
+    <div class="debug-overlay" id="debug-overlay">
+      <div><strong>MOTION</strong></div>
+      <div>Tilt X: <span id="debug-tilt-x">0.000</span></div>
+      <div>Tilt Y: <span id="debug-tilt-y">0.000</span></div>
+      <div>Intensidad: <span id="debug-intensity">0.000</span></div>
+      
+      <div style="margin-top: 10px;"><strong>AUDIO</strong></div>
+      <div>Frecuencia: <span id="debug-frequency">0.0</span> Hz</div>
+      <div>Tipo de Onda: <span id="debug-wave-type">sine</span></div>
+      <div>Volumen: <span id="debug-volume">0.0</span></div>
+      <div>Escala: <span id="debug-scale">pentatonic_major</span></div>
+      <div>Nota: <span id="debug-note">-</span></div>
+      
+      <div style="margin-top: 10px;"><strong>CLIMA</strong></div>
+      <div>Temperatura: <span id="debug-temperature">-</span>°C</div>
+      <div>Humedad: <span id="debug-humidity">-</span>%</div>
+      <div>Viento: <span id="debug-wind">-</span> km/h</div>
+      <div>Nubes: <span id="debug-clouds">-</span>%</div>
+      
+      <div style="margin-top: 10px;"><strong>SISTEMA</strong></div>
+      <div>Sesiones: <span id="debug-session-count">0</span></div>
+      <div>Modo: <span id="debug-mode">-</span></div>
     </div>
   </div>
 
-  <!-- Debug Overlay -->
-  <div class="debug-overlay" id="debug-overlay">
-    <div><strong>MOTION</strong></div>
-    <div>Tilt X: <span id="debug-tilt-x">0.000</span></div>
-    <div>Tilt Y: <span id="debug-tilt-y">0.000</span></div>
-    <div>Intensidad: <span id="debug-intensity">0.000</span></div>
+  <!-- Scripts de inicialización -->
+  <script>
+    // Marcar como listo cuando termine de cargar
+    window.addEventListener('load', () => {
+      document.body.classList.add('ready');
+    });
     
-    <div style="margin-top: 10px;"><strong>AUDIO</strong></div>
-    <div>Frecuencia: <span id="debug-frequency">0.0</span> Hz</div>
-    <div>Tipo de Onda: <span id="debug-wave-type">sine</span></div>
-    <div>Volumen: <span id="debug-volume">0.0</span></div>
-    <div>Escala: <span id="debug-scale">pentatonic_major</span></div>
-    <div>Nota: <span id="debug-note">-</span></div>
-    
-    <div style="margin-top: 10px;"><strong>CLIMA</strong></div>
-    <div>Temperatura: <span id="debug-temperature">-</span>°C</div>
-    <div>Humedad: <span id="debug-humidity">-</span>%</div>
-    <div>Viento: <span id="debug-wind">-</span> km/h</div>
-    <div>Nubes: <span id="debug-clouds">-</span>%</div>
-    
-    <div style="margin-top: 10px;"><strong>SISTEMA</strong></div>
-    <div>Sesiones: <span id="debug-session-count">0</span></div>
-    <div>Modo: <span id="debug-mode">-</span></div>
-  </div>
+    // Fallback por si tarda mucho
+    setTimeout(() => {
+      document.body.classList.add('ready');
+    }, 3000);
+  </script>
 
   <!-- Scripts p5 ANTES del module -->
-  <!-- Rutas relativas (mejor en iOS / build) -->
   <script src="./p5_v2.js"></script>
   <script src="./p5.sound_v2.min.js"></script>
 

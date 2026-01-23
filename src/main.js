@@ -1,5 +1,5 @@
 /**
- * ARCHIVO PRINCIPAL - ORQUESTADOR DE LA APLICACIÓN
+ * THEREMIN METEOROLÓGICO - MAIN
  */
 
 import './css/style.css';
@@ -8,27 +8,23 @@ import { ThereminAudio } from './modules/audio.js';
 import { ThereminStorage } from './modules/storage.js';
 import { createSketch } from './modules/sketch.js';
 import { EnvironmentService } from './modules/environment.js';
-import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { Capacitor } from '@capacitor/core';
 
-// Instancias de módulos
+// ============================================
+// INSTANCIAS Y ESTADO
+// ============================================
+
 const motionSensor = new MotionSensor();
 const thereminAudio = new ThereminAudio();
 const storage = new ThereminStorage();
 const env = new EnvironmentService();
 
-// Estado global de clima
+let settings = storage.loadSettings();
+let isRunning = false;
 let currentWeatherStyle = null;
 let currentLocation = null;
 let currentMeteo = null;
 
-// Estado + settings
-let settings = storage.loadSettings();
-console.log('Configuración inicial:', settings);
-
-let isRunning = false;
-
-// NUEVO: Lista de ciudades para shake aleatorio
 const RANDOM_CITIES = [
   'Barcelona', 'Madrid', 'París', 'Londres', 'Nueva York',
   'Tokio', 'Reykjavik', 'Dubai', 'Sídney', 'Río de Janeiro',
@@ -36,32 +32,41 @@ const RANDOM_CITIES = [
   'Roma', 'Estocolmo', 'Buenos Aires', 'Oslo', 'Helsinki'
 ];
 
-// DOM
-const startBtn = document.getElementById('start-btn');
-const activeIndicator = document.getElementById('active-indicator');
-const buttonText = startBtn?.querySelector('.button-text') || null;
-if (buttonText) buttonText.textContent = 'Start Audio';
+// ============================================
+// REFERENCIAS DOM
+// ============================================
 
+// Pantallas
+const welcomeScreen = document.getElementById('welcome-screen');
+const welcomeStartBtn = document.getElementById('welcome-start-btn');
+const mainInterface = document.getElementById('main-interface');
+
+// Controles principales
+const hamburgerBtn = document.getElementById('hamburger-btn');
+const startBtn = document.getElementById('start-btn');
+const buttonText = startBtn?.querySelector('.button-text');
+const activeIndicator = document.getElementById('active-indicator');
+
+// Controles de ajustes
+const controlsContainer = document.getElementById('controls-container');
+const moreSettingsBtn = document.getElementById('more-settings-dock-btn');
+const moreSettingsContainer = document.getElementById('more-settings-dock');
+
+// Selectores de onda
 const waveButtons = document.querySelectorAll('[data-wave]');
+
+// Ciudad
 const cityInput = document.getElementById('city-input');
 const cityApplyBtn = document.getElementById('city-apply');
+
+// Labels
 const locationLabel = document.getElementById('location-label');
 const scaleLabel = document.getElementById('scale-label');
 
-const tempLabel = document.getElementById('temp-label');
-const humidityLabel = document.getElementById('humidity-label');
-const windLabel = document.getElementById('wind-label');
-const cloudsLabel = document.getElementById('clouds-label');
-const weatherCodeLabel = document.getElementById('weather-code-label');
-
-const toggleWavesBtn = document.getElementById('toggle-waves');
-const wavesStatus = document.getElementById('waves-status');
-
-// NUEVO: Referencia al debug overlay
+// Debug
 const debugOverlay = document.getElementById('debug-overlay');
 
-// NUEVO: Referencias al menú hamburguesa
-const hamburgerBtn = document.getElementById('hamburger-btn');
+// Menú lateral
 const sideMenu = document.getElementById('side-menu');
 const closeMenuBtn = document.getElementById('close-menu-btn');
 const menuOverlay = document.getElementById('menu-overlay');
@@ -70,16 +75,18 @@ const toggleWavesMenu = document.getElementById('toggle-waves-menu');
 const wavesMenuStatus = document.getElementById('waves-menu-status');
 const resetSettingsMenu = document.getElementById('reset-settings-menu');
 
-// Helpers UI
+// ============================================
+// FUNCIONES DE UI
+// ============================================
+
 function updateActiveWaveButton() {
   waveButtons.forEach(btn => {
     const waveType = btn.getAttribute('data-wave');
-    if (waveType === settings.waveType) btn.classList.add('active');
-    else btn.classList.remove('active');
+    btn.classList.toggle('active', waveType === settings.waveType);
   });
 }
 
-function renderEnvironmentLabels() {
+function updateLabels() {
   if (locationLabel && currentLocation) {
     locationLabel.textContent = currentLocation.name || '';
   }
@@ -88,61 +95,49 @@ function renderEnvironmentLabels() {
   }
 }
 
-function renderWeatherData() {
-  if (!currentMeteo) return;
+// ============================================
+// FUNCIONES DE CLIMA
+// ============================================
 
-  if (tempLabel) {
-    tempLabel.textContent = `${currentMeteo.temperature.toFixed(1)}°C`;
-  }
-  if (humidityLabel) {
-    humidityLabel.textContent = `${currentMeteo.humidity}%`;
-  }
-  if (windLabel) {
-    windLabel.textContent = `${currentMeteo.windSpeed.toFixed(1)} km/h`;
-  }
-  if (cloudsLabel) {
-    cloudsLabel.textContent = `${currentMeteo.cloudCover}%`;
-  }
-  if (weatherCodeLabel) {
-    const weatherDescription = getWeatherDescription(currentMeteo.weatherCode);
-    weatherCodeLabel.textContent = weatherDescription;
-  }
+async function loadCityWeather(cityName) {
+  console.log('🌍 Cargando clima:', cityName);
+  
+  currentLocation = await env.geocodeCity(cityName);
+  currentMeteo = await env.fetchMeteo(
+    currentLocation.lat,
+    currentLocation.lon,
+    currentLocation.timezone
+  );
+  
+  const scaleInfo = env.decideScale(currentMeteo);
+  currentWeatherStyle = env.buildWeatherStyle(currentMeteo);
+  
+  // Guardar configuración
+  storage.updateSetting('locationName', currentLocation.name);
+  storage.updateSetting('locationLat', currentLocation.lat);
+  storage.updateSetting('locationLon', currentLocation.lon);
+  storage.updateSetting('scaleName', scaleInfo.scaleName);
+  storage.updateSetting('mood', scaleInfo.mood);
+  storage.updateSetting('waveType', scaleInfo.waveType);
+  storage.updateSetting('weatherStyle', currentWeatherStyle);
+  storage.updateSetting('meteoLastFetch', new Date().toISOString());
+  
+  // Aplicar al theremin
+  thereminAudio.setScale?.(scaleInfo.scaleName);
+  thereminAudio.setWaveType?.(scaleInfo.waveType);
+  thereminAudio.setEnvironment?.(currentWeatherStyle);
+  
+  // Actualizar UI
+  settings = storage.loadSettings();
+  updateActiveWaveButton();
+  updateLabels();
+  
+  console.log('✅ Clima cargado:', currentLocation.name, scaleInfo.scaleName);
 }
 
-function getWeatherDescription(code) {
-  const descriptions = {
-    0: 'Despejado',
-    1: 'Principalmente despejado',
-    2: 'Parcialmente nublado',
-    3: 'Nublado',
-    45: 'Niebla',
-    48: 'Niebla con escarcha',
-    51: 'Llovizna ligera',
-    53: 'Llovizna moderada',
-    55: 'Llovizna intensa',
-    61: 'Lluvia ligera',
-    63: 'Lluvia moderada',
-    65: 'Lluvia intensa',
-    71: 'Nevada ligera',
-    73: 'Nevada moderada',
-    75: 'Nevada intensa',
-    77: 'Granizo',
-    80: 'Chubascos ligeros',
-    81: 'Chubascos moderados',
-    82: 'Chubascos intensos',
-    85: 'Nevada con chubascos',
-    86: 'Nevada intensa con chubascos',
-    95: 'Tormenta',
-    96: 'Tormenta con granizo ligero',
-    99: 'Tormenta con granizo intenso'
-  };
-  return descriptions[code] || `Código ${code}`;
-}
-
-// NUEVA FUNCIÓN: Cambiar a ciudad aleatoria
 async function loadRandomCity() {
   const randomCity = RANDOM_CITIES[Math.floor(Math.random() * RANDOM_CITIES.length)];
-  console.log('– Cambiando a ciudad aleatoria:', randomCity);
+  console.log('🎲 Ciudad aleatoria:', randomCity);
   
   try {
     await loadCityWeather(randomCity);
@@ -152,352 +147,300 @@ async function loadRandomCity() {
       locationLabel.style.transform = 'scale(1.2)';
       locationLabel.style.color = '#FFD700';
       setTimeout(() => {
-        locationLabel.style.transform = 'scale(1)';
+        locationLabel.style.transform = '';
         locationLabel.style.color = '';
       }, 300);
     }
   } catch (error) {
-    console.error('Error cargando ciudad aleatoria:', error);
+    console.error('❌ Error cargando ciudad:', error);
   }
 }
-
-// Función para obtener clima de una ciudad
-async function loadCityWeather(cityName) {
-  try {
-    console.log('– Buscando ciudad:', cityName);
-    
-    currentLocation = await env.geocodeCity(cityName);
-    console.log('– Ubicación:', currentLocation);
-    
-    currentMeteo = await env.fetchMeteo(
-      currentLocation.lat,
-      currentLocation.lon,
-      currentLocation.timezone
-    );
-    console.log('– Datos meteorológicos:', currentMeteo);
-    
-    const scaleInfo = env.decideScale(currentMeteo);
-    console.log('– Escala decidida:', scaleInfo);
-    
-    currentWeatherStyle = env.buildWeatherStyle(currentMeteo);
-    console.log('– WeatherStyle:', currentWeatherStyle);
-    
-    storage.updateSetting('locationName', currentLocation.name);
-    storage.updateSetting('locationLat', currentLocation.lat);
-    storage.updateSetting('locationLon', currentLocation.lon);
-    storage.updateSetting('scaleName', scaleInfo.scaleName);
-    storage.updateSetting('mood', scaleInfo.mood);
-    storage.updateSetting('waveType', scaleInfo.waveType);
-    storage.updateSetting('weatherStyle', currentWeatherStyle);
-    storage.updateSetting('meteoLastFetch', new Date().toISOString());
-    
-    if (typeof thereminAudio.setScale === 'function') {
-      thereminAudio.setScale(scaleInfo.scaleName);
-    }
-    
-    if (typeof thereminAudio.setWaveType === 'function') {
-      thereminAudio.setWaveType(scaleInfo.waveType);
-      console.log('🎵 Tipo de onda cambiado automáticamente a:', scaleInfo.waveType);
-    }
-    
-    if (typeof thereminAudio.setEnvironment === 'function') {
-      thereminAudio.setEnvironment(currentWeatherStyle);
-    }
-    
-    settings = storage.loadSettings();
-    updateActiveWaveButton();
-    renderEnvironmentLabels();
-    renderWeatherData();
-    
-    return { location: currentLocation, meteo: currentMeteo, scaleInfo, weatherStyle: currentWeatherStyle };
-  } catch (error) {
-    console.error('❌ Error cargando clima:', error);
-    throw error;
-  }
-}
-
-async function refreshEnvironmentFromSettings() {
-  try {
-    const s = storage.loadSettings();
-    
-    if (s.locationName && s.locationName.trim()) {
-      await loadCityWeather(s.locationName);
-    } else {
-      await loadCityWeather('Barcelona');
-    }
-    
-    console.log('🌦️ Clima actualizado desde settings');
-  } catch (e) {
-    console.warn('No se pudo actualizar entorno:', e);
-  }
-}
-
-// NUEVO: Registrar callback de shake
-motionSensor.onShakeDetected(() => {
-  loadRandomCity();
-});
-
-// Cambiar ciudad desde UI
-cityApplyBtn?.addEventListener('click', async () => {
-  try {
-    const city = (cityInput?.value || '').trim();
-    if (!city) return;
-
-    await loadCityWeather(city);
-    console.log('✅ Ciudad cambiada a:', currentLocation.name);
-  } catch (e) {
-    alert(e?.message || 'No se pudo localizar esa ciudad.');
-  }
-});
-
-// ELIMINAR las funciones lockToPortrait() y enterFullscreen()
-// En su lugar, usar el plugin de Capacitor:
-
-// async function lockToPortrait() {
-//   try {
-//     await ScreenOrientation.lock({ orientation: 'portrait' });
-//     console.log('✅ Orientación bloqueada a portrait (Capacitor)');
-//   } catch (error) {
-//     console.warn('⚠️ No se pudo bloquear orientación:', error);
-//   }
-// }
-
-// Llamar al inicio o cuando quieras bloquear
-// lockToPortrait();
-
-// Botón start/stop
-startBtn?.addEventListener('click', async () => {
-  if (!isRunning) {
-    const permissionOk = await motionSensor.requestPermissions();
-    if (!permissionOk) {
-      alert('Necesito permiso de movimiento/orientación para controlar el sonido.');
-      return;
-    }
-
-    const motionOk = await motionSensor.init();
-    const audioOk = await thereminAudio.init();
-
-    if (motionOk && audioOk) {
-      settings = storage.loadSettings();
-      
-      thereminAudio.setWaveType(settings.waveType || 'sine');
-
-      if (settings.scaleName && typeof thereminAudio.setScale === 'function') {
-        thereminAudio.setScale(settings.scaleName);
-      }
-
-      if (currentWeatherStyle && typeof thereminAudio.setEnvironment === 'function') {
-        thereminAudio.setEnvironment(currentWeatherStyle);
-      }
-
-      await thereminAudio.start();
-
-      if (buttonText) buttonText.textContent = 'Stop Audio';
-      isRunning = true;
-      storage.registerSession();
-      activeIndicator?.classList.add('visible');
-
-      // MOSTRAR DEBUG SOLO EN WEB/BROWSER (no en iOS/Android nativos)
-      setTimeout(() => {
-        const platform = Capacitor.getPlatform();
-        if (debugOverlay && platform === 'web') {
-          debugOverlay.classList.add('visible');
-          console.log('🐛 Debug overlay activado (solo en browser)');
-        }
-      }, 1500);
-
-      console.log('Theremin activo');
-      console.log('💡 Agita el móvil para cambiar de ciudad aleatoria!');
-      
-      await refreshEnvironmentFromSettings();
-    } else {
-      if (buttonText) buttonText.textContent = 'Error - Try Again';
-    }
-  } else {
-    await thereminAudio.stop();
-    if (buttonText) buttonText.textContent = 'Start Audio';
-    isRunning = false;
-    activeIndicator?.classList.remove('visible');
-    
-    if (debugOverlay) {
-      debugOverlay.classList.remove('visible');
-    }
-  }
-});
-
-// Wave buttons
-updateActiveWaveButton();
-
-waveButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const waveType = btn.getAttribute('data-wave');
-    
-    settings.waveType = waveType;
-
-    if (thereminAudio.osc) {
-      thereminAudio.setWaveType(waveType);
-    }
-
-    storage.updateSetting('waveType', waveType);
-    updateActiveWaveButton();
-
-    console.log('✅ Tipo de onda cambiado a:', waveType);
-  });
-});
-
-// p5 Sketch
-createSketch(motionSensor, thereminAudio, storage);
-
-// Cargar clima inicial
-loadCityWeather('Barcelona').catch(console.error);
-
-// Limpieza
-window.addEventListener('beforeunload', async () => {
-  await motionSensor.dispose();
-  thereminAudio.dispose();
-});
 
 // ============================================
-// MENÚ HAMBURGUESA
+// INICIALIZACIÓN DE AUDIO
+// ============================================
+
+async function initializeAndStartAudio() {
+  console.log('🎬 Iniciando aplicación...');
+  
+  // Solicitar permisos
+  const permissionOk = await motionSensor.requestPermissions();
+  if (!permissionOk) {
+    alert('Necesito permiso de movimiento/orientación para funcionar.');
+    return;
+  }
+
+  // Inicializar sistemas (solo si es necesario)
+  const needsInit = !thereminAudio.audioContext || thereminAudio.audioContext.state === 'closed';
+  
+  if (needsInit) {
+    const [motionOk, audioOk] = await Promise.all([
+      motionSensor.init(),
+      thereminAudio.init()
+    ]);
+
+    if (!motionOk || !audioOk) {
+      alert('Error inicializando el theremin. Intenta recargar la página.');
+      return;
+    }
+  }
+
+  // Configurar theremin
+  settings = storage.loadSettings();
+  thereminAudio.setWaveType(settings.waveType || 'sine');
+  thereminAudio.setScale?.(settings.scaleName);
+  thereminAudio.setEnvironment?.(currentWeatherStyle);
+  
+  // Reiniciar oscilador si es necesario
+  if (!thereminAudio.isRunning) {
+    await thereminAudio.init();
+  }
+  
+  await thereminAudio.start();
+
+  // Actualizar estado
+  if (buttonText) buttonText.textContent = 'Stop';
+  isRunning = true;
+  storage.registerSession();
+  activeIndicator?.classList.add('visible');
+
+  // Transición desde pantalla de bienvenida
+  if (mainInterface?.classList.contains('hidden')) {
+    welcomeScreen?.classList.add('fade-out');
+    
+    setTimeout(() => {
+      welcomeScreen.style.display = 'none';
+      mainInterface?.classList.remove('hidden');
+      
+      // Mostrar debug en web
+      if (Capacitor.getPlatform() === 'web') {
+        setTimeout(() => debugOverlay?.classList.add('visible'), 1000);
+      }
+    }, 800);
+  } else {
+    console.log('✅ Theremin reiniciado desde interfaz principal');
+  }
+
+  console.log('✅ Theremin activo');
+  console.log('💡 Agita el móvil para cambiar de ciudad');
+}
+
+// ============================================
+// MENÚ LATERAL
 // ============================================
 
 function openMenu() {
-  console.log('🍔 Abriendo menú...');
   sideMenu?.classList.add('open');
   menuOverlay?.classList.add('visible');
-  hamburgerBtn?.classList.add('active');
   document.body.style.overflow = 'hidden';
-  console.log('✅ Menú abierto');
 }
 
 function closeMenu() {
-  console.log('🍔 Cerrando menú...');
   sideMenu?.classList.remove('open');
   menuOverlay?.classList.remove('visible');
-  hamburgerBtn?.classList.remove('active');
   document.body.style.overflow = '';
-  console.log('✅ Menú cerrado');
 }
 
-// Event listener del botón hamburguesa
-if (hamburgerBtn) {
-  hamburgerBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('🍔 Click en hamburguesa detectado');
-    
-    if (sideMenu?.classList.contains('open')) {
-      closeMenu();
+// ============================================
+// EVENT LISTENERS - NAVEGACIÓN
+// ============================================
+
+// Botón hamburguesa - Volver a bienvenida
+hamburgerBtn?.addEventListener('click', async () => {
+  console.log('🏠 Volviendo a la pantalla de bienvenida...');
+  
+  // Detener theremin
+  if (isRunning) {
+    await thereminAudio.stop();
+    isRunning = false;
+    if (buttonText) buttonText.textContent = 'Play';
+    activeIndicator?.classList.remove('visible');
+    debugOverlay?.classList.remove('visible');
+  }
+  
+  // Cerrar paneles
+  controlsContainer?.classList.remove('visible');
+  moreSettingsContainer?.classList.remove('visible');
+  moreSettingsBtn?.classList.remove('active');
+  
+  // Volver a bienvenida
+  mainInterface?.classList.add('hidden');
+  welcomeScreen.style.display = 'flex';
+  welcomeScreen?.classList.remove('fade-out');
+  
+  setTimeout(() => {
+    welcomeScreen.style.opacity = '1';
+    welcomeScreen.style.transform = 'scale(1)';
+  }, 50);
+  
+  console.log('✅ De vuelta en la pantalla de bienvenida');
+});
+
+// Botón Start Audio desde bienvenida
+welcomeStartBtn?.addEventListener('click', async () => {
+  await initializeAndStartAudio();
+});
+
+// Botón Start/Stop desde interfaz
+startBtn?.addEventListener('click', async () => {
+  if (!isRunning) {
+    await initializeAndStartAudio();
+    debugOverlay?.classList.add('visible');
+  } else {
+    await thereminAudio.stop();
+    if (buttonText) buttonText.textContent = 'Play';
+    isRunning = false;
+    activeIndicator?.classList.remove('visible');
+    debugOverlay?.classList.remove('visible');
+    console.log('⏸️ Audio detenido');
+  }
+});
+
+// ============================================
+// EVENT LISTENERS - MENÚ LATERAL
+// ============================================
+
+closeMenuBtn?.addEventListener('click', closeMenu);
+menuOverlay?.addEventListener('click', closeMenu);
+
+toggleDebugMenu?.addEventListener('click', () => {
+  if (!isRunning) {
+    alert('Primero inicia el theremin para ver el debug');
+  } else if (debugOverlay) {
+    debugOverlay.classList.toggle('visible');
+  }
+  closeMenu();
+});
+
+toggleWavesMenu?.addEventListener('click', () => {
+  const newMode = settings.visualMode === 1 ? 0 : 1;
+  storage.updateSetting('visualMode', newMode);
+  settings.visualMode = newMode;
+  
+  if (wavesMenuStatus) {
+    wavesMenuStatus.textContent = newMode === 1 ? 'Ondas: ON' : 'Ondas: OFF';
+  }
+  
+  if (toggleWavesMenu) {
+    if (newMode === 1) {
+      toggleWavesMenu.classList.add('active');
     } else {
-      openMenu();
+      toggleWavesMenu.classList.remove('active');
     }
-  });
-  console.log('✅ Event listener del hamburguesa añadido');
-} else {
-  console.error('❌ No se encontró el botón hamburguesa');
-}
+  }
+  
+  closeMenu();
+});
 
-// Botón cerrar
-if (closeMenuBtn) {
-  closeMenuBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeMenu();
-  });
-  console.log('✅ Event listener del botón cerrar añadido');
-}
+resetSettingsMenu?.addEventListener('click', () => {
+  if (confirm('¿Resetear toda la configuración?')) {
+    storage.clearAll();
+    location.reload();
+  }
+  closeMenu();
+});
 
-// Overlay para cerrar
-if (menuOverlay) {
-  menuOverlay.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeMenu();
-  });
-  console.log('✅ Event listener del overlay añadido');
-}
-
-// Opciones del menú
-if (toggleDebugMenu) {
-  toggleDebugMenu.addEventListener('click', () => {
-    console.log('🐛 Toggle debug desde menú');
-    
-    if (debugOverlay) {
-      if (!isRunning) {
-        alert('Primero inicia el theremin para ver el debug');
-        closeMenu();
-        return;
-      }
-      
-      debugOverlay.classList.toggle('visible');
-      const isVisible = debugOverlay.classList.contains('visible');
-      console.log('🐛 Debug overlay:', isVisible ? 'mostrado' : 'ocultado');
-    }
-    closeMenu();
-  });
-  console.log('✅ Event listener de toggle debug añadido');
+// Estado inicial del menú
+if (wavesMenuStatus) {
+  wavesMenuStatus.textContent = settings.visualMode === 1 ? 'Ondas: ON' : 'Ondas: OFF';
 }
 
 if (toggleWavesMenu) {
-  toggleWavesMenu.addEventListener('click', () => {
-    console.log('🌊 Toggle ondas desde menú');
-    
-    const currentMode = settings.visualMode;
-    const newMode = currentMode === 1 ? 0 : 1;
-    
-    storage.updateSetting('visualMode', newMode);
-    settings.visualMode = newMode;
-    
-    if (wavesMenuStatus) {
-      wavesMenuStatus.textContent = newMode === 1 ? 'Ondas: ON' : 'Ondas: OFF';
-    }
-    
-    console.log('👁️ Modo visual:', newMode === 1 ? 'Ondas visibles' : 'Solo partículas');
-    closeMenu();
+  if (settings.visualMode === 1) {
+    toggleWavesMenu.classList.add('active');
+  } else {
+    toggleWavesMenu.classList.remove('active');
+  }
+}
+
+// ============================================
+// EVENT LISTENERS - PANEL DE AJUSTES
+// ============================================
+
+moreSettingsBtn?.addEventListener('click', () => {
+  const isVisible = moreSettingsContainer?.classList.contains('visible');
+  
+  if (isVisible) {
+    controlsContainer?.classList.remove('visible');
+    moreSettingsContainer?.classList.remove('visible');
+    moreSettingsBtn?.classList.remove('active');
+    console.log('⬇️ Panel de ajustes cerrado');
+  } else {
+    controlsContainer?.classList.add('visible');
+    moreSettingsContainer?.classList.add('visible');
+    moreSettingsBtn?.classList.add('active');
+    console.log('⬆️ Panel de ajustes abierto');
+  }
+});
+
+// Cerrar panel al hacer click fuera
+document.addEventListener('click', (e) => {
+  const clickedInside = controlsContainer?.contains(e.target);
+  
+  if (!clickedInside && controlsContainer?.classList.contains('visible')) {
+    controlsContainer?.classList.remove('visible');
+    moreSettingsContainer?.classList.remove('visible');
+    moreSettingsBtn?.classList.remove('active');
+    console.log('⬇️ Panel cerrado (click fuera)');
+  }
+});
+
+// ============================================
+// EVENT LISTENERS - CONTROLES
+// ============================================
+
+// Shake para ciudad aleatoria
+motionSensor.onShakeDetected(loadRandomCity);
+
+// Cambiar ciudad desde input
+cityApplyBtn?.addEventListener('click', async () => {
+  const city = cityInput?.value?.trim();
+  if (!city) return;
+  
+  try {
+    await loadCityWeather(city);
+  } catch (error) {
+    alert(error?.message || 'No se pudo localizar la ciudad.');
+  }
+});
+
+// Cambiar tipo de onda
+waveButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const waveType = btn.getAttribute('data-wave');
+    settings.waveType = waveType;
+    thereminAudio.setWaveType?.(waveType);
+    storage.updateSetting('waveType', waveType);
+    updateActiveWaveButton();
   });
-  console.log('✅ Event listener de toggle ondas añadido');
-}
+});
 
-if (resetSettingsMenu) {
-  resetSettingsMenu.addEventListener('click', () => {
-    console.log('🔄 Reset settings desde menú');
-    
-    if (confirm('¿Resetear toda la configuración? Esta acción no se puede deshacer.')) {
-      storage.clearAll();
-      location.reload();
-    }
-    closeMenu();
-  });
-  console.log('✅ Event listener de reset settings añadido');
-}
+// ============================================
+// EVENT LISTENERS - TECLADO
+// ============================================
 
-// Inicializar estado del toggle de ondas en el menú
-if (wavesMenuStatus && settings.visualMode !== undefined) {
-  wavesMenuStatus.textContent = settings.visualMode === 1 ? 'Ondas: ON' : 'Ondas: OFF';
-  console.log('✅ Estado inicial de ondas:', settings.visualMode === 1 ? 'ON' : 'OFF');
-}
-
-// Cerrar menú con tecla Escape
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && sideMenu?.classList.contains('open')) {
     closeMenu();
   }
-  
-  // Toggle debug con tecla 'D' (solo cuando está corriendo)
   if ((e.key === 'd' || e.key === 'D') && isRunning) {
-    if (debugOverlay) {
-      debugOverlay.classList.toggle('visible');
-      const isVisible = debugOverlay.classList.contains('visible');
-      console.log('🐛 Debug overlay (tecla D):', isVisible ? 'mostrado' : 'ocultado');
-    }
+    debugOverlay?.classList.toggle('visible');
   }
 });
 
-// Verificar que los elementos del menú existan
-console.log('🍔 Estado de elementos del menú:', {
-  hamburgerBtn: !!hamburgerBtn,
-  sideMenu: !!sideMenu,
-  closeMenuBtn: !!closeMenuBtn,
-  menuOverlay: !!menuOverlay,
-  toggleDebugMenu: !!toggleDebugMenu,
-  toggleWavesMenu: !!toggleWavesMenu,
-  resetSettingsMenu: !!resetSettingsMenu
+// ============================================
+// INICIALIZACIÓN
+// ============================================
+
+createSketch(motionSensor, thereminAudio, storage);
+updateActiveWaveButton();
+loadCityWeather('Barcelona').catch(console.error);
+
+// ============================================
+// LIMPIEZA
+// ============================================
+
+window.addEventListener('beforeunload', async () => {
+  await motionSensor.dispose();
+  thereminAudio.dispose();
 });

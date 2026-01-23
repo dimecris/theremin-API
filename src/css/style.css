@@ -1,3 +1,7 @@
+/* ============================================
+   RESET Y BASE
+   ============================================ */
+
 * {
   margin: 0;
   padding: 0;
@@ -17,14 +21,239 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ============================================
+   P5 CONTAINER
+   ============================================ */
+
 #p5-container {
   position: fixed;
   inset: 0;
   z-index: 1;
 }
 
-/*Menu contextual*/
-.context-menu{
+/* ============================================
+   PANTALLA DE BIENVENIDA
+   ============================================ */
+
+.welcome-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0A1929 0%, #1A0033 50%, #2E5A88 100%);
+  animation: welcomeGradient 10s ease infinite;
+  background-size: 200% 200%;
+  opacity: 1;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.welcome-screen.fade-out {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+.welcome-content {
+  max-width: 500px;
+  padding: 1rem;
+  text-align: center;
+  animation: welcomeSlideIn 0.8s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-around;
+  height: 100vh;
+}
+
+@keyframes welcomeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-title {
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #b7b7b7, #b88dff, #a4a4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+  animation: titleGlow 3s ease infinite;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@keyframes titleGlow {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(123, 180, 255, 0.4)); }
+  50% { filter: drop-shadow(0 0 30px rgba(0, 209, 255, 0.6)); }
+}
+
+.title-icon {
+  display: block;
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.title-subtitle {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin-top: 0.5rem;
+  opacity: 0.8;
+}
+
+.welcome-tagline {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 1rem 0;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.welcome-instructions {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 0.7rem 0;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  padding: 0 1rem;
+}
+
+.welcome-instruction {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.welcome-instruction:first-child {
+  border-top: none;
+}
+
+.instruction-emoji {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.welcome-instruction h3 {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 0.1rem 0;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.welcome-instruction p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.welcome-start-btn {
+  position: relative;
+  padding: 1.2rem 3rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(123, 180, 255, 0.3), rgba(0, 209, 255, 0.3));
+  border: 2px solid rgba(123, 180, 255, 0.5);
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0 auto;
+  animation: btnPulse 2s ease-in-out infinite;
+}
+
+@keyframes btnPulse {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(123, 180, 255, 0.3),
+                0 0 40px rgba(0, 209, 255, 0.1);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(123, 180, 255, 0.5),
+                0 0 60px rgba(0, 209, 255, 0.2);
+  }
+}
+
+.welcome-start-btn:hover {
+  background: linear-gradient(135deg, rgba(123, 180, 255, 0.5), rgba(0, 209, 255, 0.5));
+  border-color: rgba(0, 209, 255, 0.8);
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(123, 180, 255, 0.6),
+              0 0 80px rgba(0, 209, 255, 0.3);
+}
+
+.welcome-start-btn:active {
+  transform: scale(0.98);
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+}
+
+.btn-text {
+  font-size: 1.3rem;
+}
+
+.btn-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.welcome-footer {
+  margin-top: 3rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.iconmoonish {
+  width: 3.25rem;
+  height: 3.25rem;
+  display: inline-block;
+  vertical-align: -0.2em;
+  color: currentColor;
+  opacity: 0.85;
+  filter: brightness(0) invert(1);
+}
+
+/* ============================================
+   INTERFAZ PRINCIPAL
+   ============================================ */
+
+.main-interface.hidden {
+  display: none;
+}
+
+.context-menu {
   position: absolute;
   background: rgba(0, 0, 0, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -37,7 +266,6 @@ body {
   text-align: right;
 }
 
-/* UI Overlay */
 .ui-overlay {
   position: fixed;
   inset: 0;
@@ -46,11 +274,14 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 2rem;
+  padding: 2rem 2rem 0;
   pointer-events: none;
 }
 
-/* Top Area */
+/* ============================================
+   TOP AREA
+   ============================================ */
+
 .top-area {
   text-align: center;
   animation: fadeInDown 0.6s ease-out 0.2s both;
@@ -86,13 +317,20 @@ body {
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* Center Area */
+/* ============================================
+   CENTER AREA
+   ============================================ */
+
 .center-area {
   pointer-events: auto;
   animation: fadeInScale 0.6s ease-out 0.4s both;
+  margin-left: auto;
 }
 
-/* Glassmorphic Button */
+/* ============================================
+   GLASSMORPHIC BUTTON
+   ============================================ */
+
 .glassmorphic-button {
   position: relative;
   padding: 1rem 2rem;
@@ -162,15 +400,23 @@ body {
   animation: indicatorPulse 1.5s ease-in-out infinite;
 }
 
-/* Bottom Area */
+/* ============================================
+   BOTTOM AREA - CONTROLES
+   ============================================ */
+
 .bottom-area {
   display: flex;
+  width: 100vw;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   pointer-events: auto;
-  transform: translateY(20px);
+  transform: translateY(100%);
   transition: opacity 0.3s ease, transform 0.3s ease;
+  padding: 1.25rem 0;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .bottom-area.visible {
@@ -178,7 +424,40 @@ body {
   transform: translateY(0);
 }
 
-/* Wave Selector */
+.dock {
+  transform: translateY(-40px);
+  margin-left: auto;
+  margin-right: 20px;
+}
+
+.more-settings-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.more-settings-dock-btn {
+  position: relative;
+  background: linear-gradient(135deg, rgb(255 255 255), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  outline: none;
+  transform: translateY(-33px);
+  border: 10px solid transparent;
+  border-image-slice: 1;
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 43px solid #ffffff8c;
+}
+
+/* ============================================
+   WAVE SELECTOR
+   ============================================ */
+
 .wave-selector {
   display: flex;
   gap: 0.5rem;
@@ -215,82 +494,10 @@ body {
   background: linear-gradient(to right, rgba(168, 85, 247, 0.3), rgba(59, 130, 246, 0.3));
 }
 
-/* Hint */
-.hint {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 300;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.3);
-}
+/* ============================================
+   CITY SEARCH
+   ============================================ */
 
-.dot {
-  width: 0.25rem;
-  height: 0.25rem;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 9999px;
-}
-
-/* Debug Overlay */
-.debug-overlay {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.75rem;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  font-family: 'Courier New', monospace;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
-  z-index: 50;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.debug-overlay.visible {
-  opacity: 0.6;
-}
-
-.debug-overlay div {
-  margin-bottom: 0.25rem;
-}
-
-/* Debug Tap Zone */
-.debug-tap-zone {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 4rem;
-  height: 4rem;
-  z-index: 50;
-  cursor: pointer;
-}
-
-/* Permission Notice */
-.permission-notice {
-  position: fixed;
-  bottom: 5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.5rem 1rem;
-  background: rgba(234, 179, 8, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(234, 179, 8, 0.3);
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  color: rgba(253, 224, 71, 0.8);
-  z-index: 20;
-  animation: fadeInUp 0.6s ease-out both;
-}
-
-/* City Search - Estilo glassmorphic coherente */
 .city-search {
   display: flex;
   gap: 0.5rem;
@@ -298,7 +505,8 @@ body {
   max-width: 400px;
   margin: 0 auto;
 }
-.city-search button{
+
+.city-search button {
   padding: 0.7rem 1rem;
 }
 
@@ -341,25 +549,103 @@ body {
   background: rgba(255, 255, 255, 0.07);
 }
 
+/* ============================================
+   HINTS Y OTROS
+   ============================================ */
 
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.dot {
+  width: 0.25rem;
+  height: 0.25rem;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+}
+
+.debug-tap-zone {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 4rem;
+  height: 4rem;
+  z-index: 50;
+  cursor: pointer;
+}
+
+.permission-notice {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: rgba(234, 179, 8, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(253, 224, 71, 0.8);
+  z-index: 20;
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+/* ============================================
+   DEBUG OVERLAY
+   ============================================ */
+
+.debug-overlay {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.debug-overlay.visible {
+  opacity: 0.6;
+}
+
+.debug-overlay div {
+  margin-bottom: 0.25rem;
+}
 
 /* ============================================
    MENÚ HAMBURGUESA
    ============================================ */
 
-/* Botón Hamburguesa */
 .hamburger-btn {
   position: fixed;
   top: 1.5rem;
   right: 1.5rem;
-  width: 50px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.1);
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0);
+  color: rgba(255, 255, 255, 0.7);
   border-radius: 12px;
   cursor: pointer;
+  pointer-events: auto;
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -387,9 +673,9 @@ body {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 2px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
 
-/* Animación del botón cuando el menú está abierto */
 .hamburger-btn.active .hamburger-line:nth-child(1) {
   transform: translateY(7px) rotate(45deg);
 }
@@ -402,14 +688,17 @@ body {
   transform: translateY(-7px) rotate(-45deg);
 }
 
-/* Menú Lateral */
+/* ============================================
+   MENÚ LATERAL
+   ============================================ */
+
 .side-menu {
   position: fixed;
   top: 0;
-  right: -350px;
-  width: 300px;
+  right: -105vw;
+  width: 100vw;
   height: 100vh;
-  background: rgba(20, 20, 30, 0.95);
+  background: linear-gradient(135deg, rgba(26, 0, 51, 0.95), rgba(75, 0, 130, 0.95));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -423,13 +712,11 @@ body {
   right: 0;
 }
 
-/* Header del Menú */
 .menu-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem 1.5rem 0;
 }
 
 .menu-header h2 {
@@ -441,11 +728,12 @@ body {
 }
 
 .close-btn {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.2rem;
+  border-radius: 999px;
   color: rgba(255, 255, 255, 0.9);
   font-size: 1.8rem;
   cursor: pointer;
@@ -461,11 +749,20 @@ body {
   transform: rotate(90deg);
 }
 
-/* Lista del Menú */
 .menu-list {
+  list-style: none;
+  margin: 0;
+}
+
+.menu-instructions {
   list-style: none;
   padding: 1rem 0;
   margin: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
 }
 
 .menu-item {
@@ -518,7 +815,6 @@ body {
   margin: 0.25rem 0;
 }
 
-/* Overlay para cerrar el menú */
 .menu-overlay {
   position: fixed;
   top: 0;
@@ -537,43 +833,58 @@ body {
 .menu-overlay.visible {
   opacity: 1;
   pointer-events: all;
+  backdrop-filter: none;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .city-search {
-    max-width: 100%;
-  }
-
-  #city-input {
-    font-size: 0.85rem;
-    padding: 0.65rem 0.9rem;
-  }
-
-  .city-apply-btn {
-    padding: 0.65rem 1.2rem;
-    font-size: 0.85rem;
-  }
-
-  .side-menu {
-    width: 280px;
-    right: -280px;
-  }
-  
-  .hamburger-btn {
-    top: 1rem;
-    right: 1rem;
-    width: 45px;
-    height: 45px;
-  }
+.menu-section {
+  padding: 0;
+  margin: 15px 0;
 }
 
-/* Optimización para landscape */
-@media (orientation: landscape) {
-  /* Vacío - solo para que funcione bien si no se bloquea */
+.instruction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  width: 250px;
+  transition: all 0.3s ease;
 }
 
-/* Animations */
+.instruction-item p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.instruction-item strong {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.side-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.side-menu::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.side-menu::-webkit-scrollbar-thumb {
+  background: rgba(123, 180, 255, 0.3);
+  border-radius: 3px;
+}
+
+.side-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 180, 255, 0.5);
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
 @keyframes fadeInDown {
   from {
     opacity: 0;
@@ -635,3 +946,30 @@ body {
     transform: translateY(-50%) scale(1.2);
   }
 }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 600px) {
+  .title-icon {
+    font-size: 3rem;
+  }
+  
+  .title-subtitle {
+    font-size: 1.2rem;
+  }
+  
+  .welcome-tagline {
+    font-size: 1rem;
+  }
+  
+  .welcome-instruction h3 {
+    font-size: 1rem;
+  }
+  
+  .welcome-instruction p {
+    font-size: 0.85rem;
+  }
+}
+

@@ -10,31 +10,20 @@ export class ThereminAudio {
     this.gain = null;
     this.isRunning = false;
 
-    // MODIFICADO: Rango de frecuencias más cálido y musical
-    this.minFreq = 220; // A3 - más grave y cálido
-    this.maxFreq = 880; // A5 - dos octavas arriba
+    // Rango de frecuencias (A3 - A5)
+    this.minFreq = 220;
+    this.maxFreq = 880;
 
-    // Tipo de onda (sine por defecto = más suave)
+    // Configuración
     this.waveType = 'sine';
-
-    // Escala musical (pentatónica por defecto = más consonante)
     this.currentScale = 'pentatonic_major';
     this.scaleNotes = this.getScaleNotes('pentatonic_major');
+    this.glideTime = 0.05; // Portamento suave
 
-    // Propiedades públicas para debug
+    // Estado público (debug)
     this.currentFrequency = 0;
     this.currentVolume = 0;
     this.currentNote = '-';
-
-    // Suavizado de transiciones (glide/portamento)
-    this.glideTime = 0.05; // 50ms de transición suave entre notas
-
-    // Parámetros ambientales (PR2)
-    this.envParams = {
-      reverb: 0,
-      filter: 1000,
-      distortion: 0
-    };
   }
 
   async init() {
@@ -51,7 +40,7 @@ export class ThereminAudio {
       this.osc.connect(this.gain);
       this.gain.connect(this.audioContext.destination);
 
-      console.log('✅ Audio inicializado correctamente');
+      console.log('✅ Audio inicializado');
       return true;
     } catch (error) {
       console.error('❌ Error inicializando audio:', error);
@@ -82,73 +71,53 @@ export class ThereminAudio {
       this.gain.gain.setValueAtTime(0, this.audioContext.currentTime);
       
       setTimeout(() => {
-        if (this.osc) {
-          this.osc.stop();
-          this.osc.disconnect();
-          this.osc = null;
-        }
+        this.osc?.stop();
+        this.osc?.disconnect();
+        this.osc = null;
         this.isRunning = false;
         console.log('🔇 Theremin detenido');
       }, 100);
     } catch (error) {
-      console.error('Error al detener theremin:', error);
+      console.error('❌ Error al detener:', error);
     }
   }
 
   update(tiltX, tiltY) {
     if (!this.osc || !this.gain) return;
 
-    const normalizedTiltX = (tiltX + 1) / 2;
-    const normalizedTiltY = (tiltY + 1) / 2;
+    const now = this.audioContext.currentTime;
 
-    // Frecuencia cuantizada a escala musical
-    const rawFreq = this.minFreq + normalizedTiltX * (this.maxFreq - this.minFreq);
+    // Frecuencia cuantizada
+    const normX = (tiltX + 1) / 2;
+    const rawFreq = this.minFreq + normX * (this.maxFreq - this.minFreq);
     const quantizedFreq = this.quantizeToScale(rawFreq);
     
-    // NUEVO: Transición suave (exponentialRampToValueAtTime)
-    const now = this.audioContext.currentTime;
     this.osc.frequency.cancelScheduledValues(now);
     this.osc.frequency.setValueAtTime(this.osc.frequency.value, now);
-    this.osc.frequency.exponentialRampToValueAtTime(
-      quantizedFreq,
-      now + this.glideTime
-    );
+    this.osc.frequency.exponentialRampToValueAtTime(quantizedFreq, now + this.glideTime);
 
-    // Volumen con transición suave
-    const volume = Math.max(0, Math.min(1, normalizedTiltY));
+    // Volumen
+    const normY = (tiltY + 1) / 2;
+    const volume = Math.max(0, Math.min(1, normY));
+    
     this.gain.gain.cancelScheduledValues(now);
     this.gain.gain.setValueAtTime(this.gain.gain.value, now);
-    this.gain.gain.linearRampToValueAtTime(
-      volume * 0.3,
-      now + 0.03 // 30ms de transición en volumen
-    );
+    this.gain.gain.linearRampToValueAtTime(volume * 0.3, now + 0.03);
 
-    // Actualizar propiedades públicas
+    // Actualizar estado
     this.currentFrequency = quantizedFreq;
     this.currentVolume = volume;
     this.currentNote = this.getNoteName(quantizedFreq);
   }
 
   quantizeToScale(freq) {
-    if (!this.scaleNotes || this.scaleNotes.length === 0) {
-      return freq;
-    }
+    if (!this.scaleNotes?.length) return freq;
 
-    let closestNote = this.scaleNotes[0];
-    let minDiff = Math.abs(freq - closestNote);
-
-    for (let note of this.scaleNotes) {
-      const diff = Math.abs(freq - note);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestNote = note;
-      }
-    }
-
-    return closestNote;
+    return this.scaleNotes.reduce((closest, note) => 
+      Math.abs(freq - note) < Math.abs(freq - closest) ? note : closest
+    );
   }
 
-  // NUEVO: Obtener nombre de nota musical
   getNoteName(freq) {
     const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const A4 = 440;
@@ -164,47 +133,36 @@ export class ThereminAudio {
     if (validTypes.includes(type) && this.osc) {
       this.waveType = type;
       this.osc.type = type;
-      console.log('🎵 Tipo de onda cambiado a:', type);
+      console.log('🎵 Onda:', type);
     }
   }
 
   setScale(scaleName) {
     this.currentScale = scaleName;
     this.scaleNotes = this.getScaleNotes(scaleName);
-    console.log('🎼 Escala cambiada a:', scaleName);
+    console.log('🎼 Escala:', scaleName);
   }
 
   getScaleNotes(scaleName) {
     const baseFreq = 261.63; // C4
     
     const scales = {
-      // Escalas mayores - más alegres y consonantes
-      'major': [0, 2, 4, 5, 7, 9, 11, 12],
-      'ionian': [0, 2, 4, 5, 7, 9, 11, 12], // Modo mayor clásico
-      
-      // Escalas menores - más melancólicas pero consonantes
-      'minor': [0, 2, 3, 5, 7, 8, 10, 12],
-      'dorian': [0, 2, 3, 5, 7, 9, 10, 12], // Menor más suave
-      
-      // Pentatónicas - las MÁS consonantes (sin semitonos)
-      'pentatonic_major': [0, 2, 4, 7, 9, 12],
-      'pentatonic_minor': [0, 3, 5, 7, 10, 12],
-      
-      // Blues - consonante pero con carácter
-      'blues': [0, 3, 5, 6, 7, 10, 12],
-      
-      // NUEVAS: Escalas más exóticas pero consonantes
-      'lydian': [0, 2, 4, 6, 7, 9, 11, 12], // Etérea, soñadora
-      'mixolydian': [0, 2, 4, 5, 7, 9, 10, 12], // Alegre, folclórica
-      
-      // Cromática - solo para efectos especiales
-      'chromatic': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      major: [0, 2, 4, 5, 7, 9, 11, 12],
+      ionian: [0, 2, 4, 5, 7, 9, 11, 12],
+      minor: [0, 2, 3, 5, 7, 8, 10, 12],
+      dorian: [0, 2, 3, 5, 7, 9, 10, 12],
+      pentatonic_major: [0, 2, 4, 7, 9, 12],
+      pentatonic_minor: [0, 3, 5, 7, 10, 12],
+      blues: [0, 3, 5, 6, 7, 10, 12],
+      lydian: [0, 2, 4, 6, 7, 9, 11, 12],
+      mixolydian: [0, 2, 4, 5, 7, 9, 10, 12],
+      chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     };
 
-    const intervals = scales[scaleName] || scales['pentatonic_major'];
+    const intervals = scales[scaleName] || scales.pentatonic_major;
     const notes = [];
 
-    // Generar 3 octavas para más rango
+    // Generar 3 octavas
     for (let octave = 0; octave < 3; octave++) {
       for (let interval of intervals) {
         const freq = baseFreq * Math.pow(2, (octave * 12 + interval) / 12);
@@ -218,25 +176,13 @@ export class ThereminAudio {
   }
 
   setEnvironment(style) {
-    if (!style) return;
-    
-    /* console.log('🌦️ Parámetros ambientales aplicados:', {
-      humedad: style.h01,
-      viento: style.w01,
-      temperatura: style.t01
-    }); */
+    // Reservado para efectos futuros (reverb, filtros, etc.)
   }
 
   dispose() {
-    if (this.osc) {
-      this.osc.stop();
-      this.osc.disconnect();
-    }
-    if (this.gain) {
-      this.gain.disconnect();
-    }
-    if (this.audioContext) {
-      this.audioContext.close();
-    }
+    this.osc?.stop();
+    this.osc?.disconnect();
+    this.gain?.disconnect();
+    this.audioContext?.close();
   }
 }
