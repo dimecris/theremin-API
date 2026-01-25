@@ -1,6 +1,6 @@
 {
   "appId": "com.tudominio.theremin",
-  "appName": "Theremin Meteorológico",
+  "appName": "Theremin Meteo",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

@@ -1,21 +1,77 @@
-MIT License
+# Licencia Propietaria - Theremin Meteo
 
-Copyright (c) 2025 Kris Darias
+Copyright (c) 2025 Kris Darias. Todos los derechos reservados.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## Permisos Otorgados
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Se concede permiso para:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. **Uso Personal**: Descargar, compilar y ejecutar esta aplicación para uso personal y educativo no comercial.
+2. **Visualización del Código**: Inspeccionar el código fuente con fines de aprendizaje.
+3. **Compartir**: Enlazar a este repositorio original.
+
+## Restricciones
+
+Queda **PROHIBIDO** sin autorización expresa por escrito del autor:
+
+1. **Uso Comercial**: No se permite el uso de este software, sus conceptos, algoritmos o diseños para fines comerciales, incluyendo pero no limitado a:
+   - Venta del software o versiones derivadas
+   - Inclusión en productos comerciales
+   - Uso en servicios de pago
+   - Monetización mediante publicidad
+
+2. **Obras Derivadas**: No se permite crear, distribuir o publicar versiones modificadas, adaptaciones o trabajos derivados basados en:
+   - El concepto de "Theremin Meteo" (mapeo clima → sonido → visualización)
+   - Los algoritmos de mapeo meteorológico a escalas musicales
+   - El sistema de síntesis de audio reactivo al clima
+
+
+3. **Redistribución**: No se permite redistribuir este software o sus componentes, modificados o no, sin atribución explícita al autor original.
+
+4. **Apropiación**: No se permite reclamar autoría o propiedad intelectual sobre este trabajo o sus ideas fundamentales.
+
+## Atribución Requerida
+
+Cualquier mención, referencia o uso permitido de este proyecto debe incluir:
+
+```
+Theremin Meteo
+Creado por Kris Darias (2025)
+https://github.com/krisdarias/theremin-meteo
+```
+
+## Solicitudes de Licencia Comercial
+
+Si estás interesado en usar este proyecto con fines comerciales o crear obras derivadas, contacta al autor:
+
+**Kris Darias**  
+Email: [tu-email@ejemplo.com]  
+GitHub: [@krisdarias](https://github.com/krisdarias)
+
+## Propiedad Intelectual
+
+El concepto, diseño, arquitectura y metodología de este proyecto están protegidos como propiedad intelectual del autor. Esto incluye:
+
+- El concepto de mapeo clima → escala musical → síntesis de audio
+- La metodología de cuantización musical basada en condiciones meteorológicas
+- El sistema de efectos de audio adaptativos (humedad → filtro, viento → vibrato)
+- La arquitectura modular (MotionSensor, ThereminAudio, EnvironmentService, etc.)
+
+## Descargo de Responsabilidad
+
+ESTE SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O IMPLÍCITA, INCLUYENDO PERO NO LIMITADO A GARANTÍAS DE COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR Y NO INFRACCIÓN. EN NINGÚN CASO LOS AUTORES O TITULARES DE DERECHOS DE AUTOR SERÁN RESPONSABLES DE CUALQUIER RECLAMO, DAÑOS U OTRA RESPONSABILIDAD, YA SEA EN UNA ACCIÓN DE CONTRATO, AGRAVIO O DE OTRO TIPO, QUE SURJA DE, FUERA DE O EN CONEXIÓN CON EL SOFTWARE O EL USO U OTROS TRATOS EN EL SOFTWARE.
+
+## Tecnologías de Terceros
+
+Este proyecto utiliza las siguientes librerías de código abierto bajo sus respectivas licencias:
+
+- **Vite** - MIT License
+- **Capacitor** - MIT License
+- **p5.js** - LGPL-2.1 License
+- **Open-Meteo API** - CC BY 4.0
+
+Estas librerías mantienen sus licencias originales y no están sujetas a las restricciones de este documento.
+
+---
+
+**Última actualización**: 25 de enero de 2025
