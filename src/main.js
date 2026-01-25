@@ -139,17 +139,21 @@ async function loadCityWeather(cityName) {
   storage.updateSetting('weatherStyle', currentWeatherStyle);
   storage.updateSetting('meteoLastFetch', new Date().toISOString());
   
-  // Aplicar al theremin
-  thereminAudio.setScale?.(scaleInfo.scaleName);
-  thereminAudio.setWaveType?.(scaleInfo.waveType);
-  thereminAudio.setEnvironment?.(currentWeatherStyle);
+  // Recargar settings DESPUÉS de guardar
+  settings = storage.loadSettings();
+  
+  // Aplicar al theremin solo si está corriendo
+  if (isRunning && thereminAudio.isRunning) {
+    thereminAudio.setScale?.(scaleInfo.scaleName);
+    thereminAudio.setWaveType?.(scaleInfo.waveType);
+    thereminAudio.setEnvironment?.(currentWeatherStyle);
+  }
   
   // Actualizar UI
-  settings = storage.loadSettings();
   updateActiveWaveButton();
   updateLabels();
   
-  console.log('Clima cargado:', currentLocation.name, scaleInfo.scaleName);
+  console.log('Clima cargado:', currentLocation.name, scaleInfo.scaleName, scaleInfo.waveType);
 }
 
 async function loadRandomCity() {
@@ -209,9 +213,11 @@ async function initializeAndStartAudio() {
     }
   }
 
-  // Configurar theremin
+  // Configurar theremin con los settings actuales (que ya incluyen el waveType del clima)
   settings = storage.loadSettings();
-  thereminAudio.setWaveType(settings.waveType || 'sine');
+  
+  // IMPORTANTE: Usar el waveType del clima, no un default
+  thereminAudio.setWaveType(settings.waveType);
   thereminAudio.setScale?.(settings.scaleName);
   thereminAudio.setEnvironment?.(currentWeatherStyle);
   
@@ -256,6 +262,7 @@ async function initializeAndStartAudio() {
   }
 
   console.log('Theremin activo');
+  console.log('Escala:', settings.scaleName, '| Onda:', settings.waveType, '| Mood:', settings.mood);
   console.log('Agita el móvil para cambiar de ciudad');
 }
 
@@ -426,14 +433,18 @@ cityApplyBtn?.addEventListener('click', async () => {
   }
 });
 
-// Cambiar tipo de onda
+// Cambiar tipo de onda MANUALMENTE (esto sobreescribe el del clima)
 waveButtons.forEach(btn => {
   btn.addEventListener('click', async () => {
     const waveType = btn.getAttribute('data-wave');
+    
+    // Guardar y aplicar el cambio manual
     settings.waveType = waveType;
-    thereminAudio.setWaveType?.(waveType);
     storage.updateSetting('waveType', waveType);
+    thereminAudio.setWaveType?.(waveType);
     updateActiveWaveButton();
+    
+    console.log('Tipo de onda cambiado MANUALMENTE a:', waveType);
     
     // VIBRACIÓN AL CAMBIAR TIPO DE ONDA
     try {
