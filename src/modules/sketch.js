@@ -1,5 +1,6 @@
 /**
  * MÓDULO DE VISUALIZACIÓN CON P5.JS
+ * Gestiona el canvas principal, partículas, efectos meteorológicos y debug
  */
 
 import { Particle } from './particles.js';
@@ -10,73 +11,99 @@ export function createSketch(motionSensor, thereminAudio, storage) {
     let precipitationParticles = [];
     let cloudLayers = [];
     let settings;
+    let canvasReady = false;
 
     // ============================================
     // SETUP
     // ============================================
     
-    p.setup = async () => {
-      const cnv = p.createCanvas(p.windowWidth, p.windowHeight);
-      cnv.parent('p5-container');
-      settings = storage.loadSettings();
+    p.setup = () => {
+      try {
+        const container = document.getElementById('p5-container');
+        if (!container) {
+          console.error('No se encontró el contenedor #p5-container');
+          return;
+        }
 
-      // Crear partículas
-      for (let i = 0; i < 100; i++) {
-        particles.push(new Particle(p));
-      }
+        const cnv = p.createCanvas(p.windowWidth, p.windowHeight);
+        cnv.parent('p5-container');
+        
+        setTimeout(() => {
+          canvasReady = true;
+        }, 100);
 
-      // Crear nubes
-      for (let i = 0; i < 5; i++) {
-        cloudLayers.push({
-          x: p.random(p.width),
-          y: p.random(p.height),
-          size: p.random(150, 300),
-          speed: p.random(0.1, 0.3)
-        });
+        settings = storage.loadSettings();
+
+        // Crear partículas flotantes
+        for (let i = 0; i < 100; i++) {
+          particles.push(new Particle(p));
+        }
+
+        // Crear capas de nubes
+        for (let i = 0; i < 5; i++) {
+          cloudLayers.push({
+            x: p.random(p.width),
+            y: p.random(p.height),
+            size: p.random(150, 300),
+            speed: p.random(0.1, 0.3)
+          });
+        }
+
+        console.log('Canvas p5.js inicializado correctamente');
+      } catch (error) {
+        console.error('Error en setup de p5:', error);
       }
     };
 
     // ============================================
-    // DRAW
+    // DRAW LOOP
     // ============================================
     
     p.draw = () => {
-      settings = storage.loadSettings();
-      const style = settings.weatherStyle || null;
-
-      // Fondo con gradiente térmico
-      drawThermalGradient(style);
-
-      // Efectos meteorológicos
-      if (style?.fog01 > 0.3) drawFog(style.fog01);
-      if (style?.c01 > 0.2) drawClouds(style.c01);
-
-      // Actualizar audio con entorno
-      thereminAudio.setEnvironment?.(style);
-
-      // Calcular movimiento
-      const sens = settings.sensitivity || 1.0;
-      const tiltX = Math.max(-1, Math.min(1, motionSensor.getTiltX() * sens));
-      const tiltY = Math.max(-1, Math.min(1, motionSensor.getTiltY() * sens));
-
-      // Actualizar theremin y debug
-      thereminAudio.update(tiltX, tiltY);
-      updateDebug(tiltX, tiltY);
-
-      // Partículas
-      particles.forEach(p => {
-        p.update(tiltX, tiltY, style);
-        p.display(style);
-      });
-
-      // Ondas
-      if (settings.visualMode === 1) {
-        drawWaves(tiltX, tiltY, style);
+      if (!canvasReady || !p._renderer || !p.drawingContext) {
+        return;
       }
 
-      // Precipitación
-      if (style?.p01 > 0.05) {
-        drawPrecipitation(style, tiltY);
+      try {
+        settings = storage.loadSettings();
+        const style = settings.weatherStyle || null;
+
+        // Renderizar fondo con gradiente térmico
+        drawThermalGradient(style);
+
+        // Efectos atmosféricos
+        if (style?.fog01 > 0.3) drawFog(style.fog01);
+        if (style?.c01 > 0.2) drawClouds(style.c01);
+
+        // Actualizar efectos de audio según clima
+        thereminAudio.setEnvironment?.(style);
+
+        // Obtener valores de inclinación con sensibilidad aplicada
+        const sens = settings.sensitivity || 1.0;
+        const tiltX = Math.max(-1, Math.min(1, motionSensor.getTiltX() * sens));
+        const tiltY = Math.max(-1, Math.min(1, motionSensor.getTiltY() * sens));
+
+        // Actualizar audio y debug
+        thereminAudio.update(tiltX, tiltY);
+        updateDebug(tiltX, tiltY);
+
+        // Renderizar partículas
+        particles.forEach(particle => {
+          particle.update(tiltX, tiltY, style);
+          particle.display(style);
+        });
+
+        // Renderizar ondas si está activado
+        if (settings.visualMode === 1) {
+          drawWaves(tiltX, tiltY, style);
+        }
+
+        // Renderizar precipitación si hay
+        if (style?.p01 > 0.05) {
+          drawPrecipitation(style, tiltY);
+        }
+      } catch (error) {
+        console.error('Error en draw de p5:', error);
       }
     };
 
@@ -90,77 +117,93 @@ export function createSketch(motionSensor, thereminAudio, storage) {
         return;
       }
 
-      const start = p.color(style.gradientStart);
-      const end = p.color(style.gradientEnd);
+      try {
+        const start = p.color(style.gradientStart);
+        const end = p.color(style.gradientEnd);
 
-      for (let y = 0; y < p.height; y++) {
-        p.stroke(p.lerpColor(start, end, p.map(y, 0, p.height, 0, 1)));
-        p.line(0, y, p.width, y);
+        for (let y = 0; y < p.height; y++) {
+          p.stroke(p.lerpColor(start, end, p.map(y, 0, p.height, 0, 1)));
+          p.line(0, y, p.width, y);
+        }
+      } catch (error) {
+        console.error('Error dibujando gradiente:', error);
+        p.background(0);
       }
     }
 
     function drawFog(intensity) {
-      p.fill(200, 200, 220, p.map(intensity, 0, 1, 0, 150));
-      p.noStroke();
-      p.rect(0, 0, p.width, p.height);
+      try {
+        p.fill(200, 200, 220, p.map(intensity, 0, 1, 0, 150));
+        p.noStroke();
+        p.rect(0, 0, p.width, p.height);
+      } catch (error) {
+        console.error('Error dibujando niebla:', error);
+      }
     }
 
     function drawClouds(cover) {
-      const opacity = p.map(cover, 0, 1, 0, 80);
-      p.noStroke();
-      p.fill(50, 50, 70, opacity);
+      try {
+        const opacity = p.map(cover, 0, 1, 0, 80);
+        p.noStroke();
+        p.fill(50, 50, 70, opacity);
 
-      cloudLayers.forEach(cloud => {
-        cloud.x += cloud.speed;
-        if (cloud.x > p.width + cloud.size) cloud.x = -cloud.size;
-        p.ellipse(cloud.x, cloud.y, cloud.size, cloud.size * 0.6);
-      });
+        cloudLayers.forEach(cloud => {
+          cloud.x += cloud.speed;
+          if (cloud.x > p.width + cloud.size) cloud.x = -cloud.size;
+          p.ellipse(cloud.x, cloud.y, cloud.size, cloud.size * 0.6);
+        });
+      } catch (error) {
+        console.error('Error dibujando nubes:', error);
+      }
     }
 
     function drawWaves(tiltX, tiltY, style) {
-      if (!style) return;
+      if (!style || !p.drawingContext) return;
 
-      // Configurar glow
-      const ctx = p.drawingContext;
-      ctx.shadowBlur = p.map(style.h01, 0, 1, 5, 40);
-      ctx.shadowColor = style.primary || '#00D1FF';
-      
-      p.noFill();
-      p.strokeWeight(p.map(style.h01, 0, 1, 1, 4));
-      p.stroke(style.primary || '#00D1FF');
+      try {
+        const ctx = p.drawingContext;
+        ctx.shadowBlur = p.map(style.h01 || 0, 0, 1, 5, 40);
+        ctx.shadowColor = style.primary || '#00D1FF';
+        
+        p.noFill();
+        p.strokeWeight(p.map(style.h01 || 0, 0, 1, 1, 4));
+        p.stroke(style.primary || '#00D1FF');
 
-      const turbulence = style.w01 || 0;
-      const waveType = settings.waveType || 'sine';
+        const turbulence = style.w01 || 0;
+        const waveType = settings.waveType || 'sine';
 
-      // Dibujar 3 ondas
-      for (let i = 0; i < 3; i++) {
-        p.beginShape();
-        for (let x = 0; x < p.width; x += 10) {
-          const amplitude = 50 + tiltY * 50;
-          const frequency = 0.01 + tiltX * 0.01;
-          const phase = x * frequency + p.millis() * 0.001;
-          const noise = p.noise(x * 0.01, p.millis() * 0.001 + i) * turbulence * 30;
-          
-          // Calcular forma de onda
-          let wave;
-          switch(waveType) {
-            case 'sine': wave = p.sin(phase); break;
-            case 'square': wave = p.sin(phase) > 0 ? 1 : -1; break;
-            case 'sawtooth': wave = ((phase % p.TWO_PI) / p.TWO_PI) * 2 - 1; break;
-            case 'triangle': 
-              const saw = (phase % p.TWO_PI) / p.PI;
-              wave = Math.abs(saw - 1) * 2 - 1;
-              break;
-            default: wave = p.sin(phase);
+        // Dibujar 3 capas de ondas
+        for (let i = 0; i < 3; i++) {
+          p.beginShape();
+          for (let x = 0; x < p.width; x += 10) {
+            const amplitude = 50 + tiltY * 50;
+            const frequency = 0.01 + tiltX * 0.01;
+            const phase = x * frequency + p.millis() * 0.001;
+            const noise = p.noise(x * 0.01, p.millis() * 0.001 + i) * turbulence * 30;
+            
+            // Calcular forma de onda
+            let wave;
+            switch(waveType) {
+              case 'sine': wave = p.sin(phase); break;
+              case 'square': wave = p.sin(phase) > 0 ? 1 : -1; break;
+              case 'sawtooth': wave = ((phase % p.TWO_PI) / p.TWO_PI) * 2 - 1; break;
+              case 'triangle': 
+                const saw = (phase % p.TWO_PI) / p.PI;
+                wave = Math.abs(saw - 1) * 2 - 1;
+                break;
+              default: wave = p.sin(phase);
+            }
+            
+            const y = p.height / 2 + i * 50 + wave * amplitude + noise;
+            p.vertex(x, y);
           }
-          
-          const y = p.height / 2 + i * 50 + wave * amplitude + noise;
-          p.vertex(x, y);
+          p.endShape();
         }
-        p.endShape();
-      }
 
-      ctx.shadowBlur = 0;
+        ctx.shadowBlur = 0;
+      } catch (error) {
+        console.error('Error dibujando ondas:', error);
+      }
     }
 
     function drawPrecipitation(style, pitch) {

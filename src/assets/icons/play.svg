@@ -7,9 +7,9 @@
         stroke: #000;
         stroke-linecap: round;
         stroke-linejoin: round;
-        stroke-width: 2px;
+        stroke-width: 1.68px;
       }
     </style>
   </defs>
-  <polygon class="cls-1" points="6 3 20 12 6 21 6 3"/>
+  <polygon class="cls-1" points="7.11 4.43 18.89 12 7.11 19.57 7.11 4.43"/>
 </svg>

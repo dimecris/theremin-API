@@ -42,7 +42,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0A1929 0%, #1A0033 50%, #2E5A88 100%);
+  background: linear-gradient(180deg, #0C0F14 0%, #1A2230 100%);
   animation: welcomeGradient 10s ease infinite;
   background-size: 200% 200%;
   opacity: 1;
@@ -52,6 +52,7 @@ body {
 .welcome-screen.fade-out {
   opacity: 0;
   transform: scale(0.95);
+  transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
   pointer-events: none;
 }
 
@@ -82,7 +83,7 @@ body {
   font-size: 1.5rem;
   font-weight: 300;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #b7b7b7, #b88dff, #a4a4ff);
+  background: linear-gradient(135deg, #4FA3C4, #B04A6A);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -133,10 +134,10 @@ body {
   text-align: left;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
-  padding: 0 1rem;
+  padding: 1rem;
 }
 
 .welcome-instruction {
@@ -249,8 +250,13 @@ body {
    INTERFAZ PRINCIPAL
    ============================================ */
 
+#main-interface {
+  transition: opacity 0.8s ease-in-out;
+  opacity: 1;
+}
+
 .main-interface.hidden {
-  display: none;
+  opacity: 0;
 }
 
 .context-menu {
@@ -274,7 +280,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 2rem 2rem 0;
+  padding: 2rem;
   pointer-events: none;
 }
 
@@ -332,25 +338,39 @@ body {
    ============================================ */
 
 .glassmorphic-button {
-  position: relative;
-  padding: 1rem 2rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  cursor: pointer;
-  overflow: hidden;
-  transition: transform 0.2s ease;
-  outline: none;
+    position: relative;
+    padding: 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    cursor: pointer;
+    pointer-events: auto;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    outline: none;
+    height: 50px;
+    width: 50px;
 }
-
-.glassmorphic-button:active {
-  transform: scale(0.95);
-}
-
 .glassmorphic-button:hover {
-  transform: scale(1.05);
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+.autosize-button{
+    min-width: 200px;
+    padding: 0.5rem 1.5rem;
+    margin: 0 auto;
+}
+.autosize-button .button-text{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    font-size: 0.9rem;
 }
 
 .glassmorphic-button.active {
@@ -367,8 +387,9 @@ body {
   animation: none;
 }
 
-.glassmorphic-button.active .button-glow {
-  background: radial-gradient(circle at center, rgba(168, 85, 247, 0.4), transparent);
+.glassmorphic-button.active .button-glow,
+.glassmorphic-button:hover .button-glow {
+  background: radial-gradient(circle at center, rgb(255 131 179 / 35%), rgba(90, 153, 185, 1));
   animation: buttonGlow 2s ease-in-out infinite;
 }
 
@@ -399,6 +420,9 @@ body {
   opacity: 1;
   animation: indicatorPulse 1.5s ease-in-out infinite;
 }
+.button-right {
+  margin-left: auto;
+}
 
 /* ============================================
    BOTTOM AREA - CONTROLES
@@ -406,17 +430,18 @@ body {
 
 .bottom-area {
   display: flex;
-  width: 100vw;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
   pointer-events: auto;
-  transform: translateY(100%);
+  transform: translateY(140%);
   transition: opacity 0.3s ease, transform 0.3s ease;
   padding: 1.25rem 0;
-  background: rgba(255, 255, 255, 0.05);
+
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  padding: 1rem;
+  border-radius: 12px;
 }
 
 .bottom-area.visible {
@@ -425,9 +450,14 @@ body {
 }
 
 .dock {
-  transform: translateY(-40px);
-  margin-left: auto;
-  margin-right: 20px;
+    position: absolute;
+    height: 100vh;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin-right: 2rem;
 }
 
 .more-settings-dock {
@@ -628,258 +658,8 @@ body {
   margin-bottom: 0.25rem;
 }
 
-/* ============================================
-   MENÚ HAMBURGUESA
-   ============================================ */
 
-.hamburger-btn {
-  position: fixed;
-  top: 1.5rem;
-  right: 1.5rem;
-  width: 30px;
-  height: 30px;
-  background: rgba(255, 255, 255, 0);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0);
-  color: rgba(255, 255, 255, 0.7);
-  border-radius: 12px;
-  cursor: pointer;
-  pointer-events: auto;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
 
-.hamburger-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: scale(1.05);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.hamburger-btn:active {
-  transform: scale(0.95);
-}
-
-.hamburger-line {
-  width: 24px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 2px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-}
-
-.hamburger-btn.active .hamburger-line:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
-
-.hamburger-btn.active .hamburger-line:nth-child(2) {
-  opacity: 0;
-}
-
-.hamburger-btn.active .hamburger-line:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
-}
-
-/* ============================================
-   MENÚ LATERAL
-   ============================================ */
-
-.side-menu {
-  position: fixed;
-  top: 0;
-  right: -105vw;
-  width: 100vw;
-  height: 100vh;
-  background: linear-gradient(135deg, rgba(26, 0, 51, 0.95), rgba(75, 0, 130, 0.95));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
-  z-index: 1001;
-  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow-y: auto;
-}
-
-.side-menu.open {
-  right: 0;
-}
-
-.menu-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 0;
-}
-
-.menu-header h2 {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1.5rem;
-  font-weight: 300;
-  letter-spacing: 0.1em;
-  margin: 0;
-}
-
-.close-btn {
-  width: 30px;
-  height: 30px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.2rem;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1.8rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  line-height: 1;
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: rotate(90deg);
-}
-
-.menu-list {
-  list-style: none;
-  margin: 0;
-}
-
-.menu-instructions {
-  list-style: none;
-  padding: 1rem 0;
-  margin: 0;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.menu-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
-  font-weight: 300;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: left;
-}
-
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 1);
-}
-
-.menu-item:active {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.menu-icon {
-  font-size: 1.3rem;
-  width: 24px;
-  text-align: center;
-}
-
-.menu-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 1rem 1.5rem;
-}
-
-.menu-info {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
-}
-
-.menu-info p {
-  margin: 0.25rem 0;
-}
-
-.menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 999;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.menu-overlay.visible {
-  opacity: 1;
-  pointer-events: all;
-  backdrop-filter: none;
-}
-
-.menu-section {
-  padding: 0;
-  margin: 15px 0;
-}
-
-.instruction-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px;
-  width: 250px;
-  transition: all 0.3s ease;
-}
-
-.instruction-item p {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.instruction-item strong {
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 300;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.side-menu::-webkit-scrollbar {
-  width: 6px;
-}
-
-.side-menu::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.side-menu::-webkit-scrollbar-thumb {
-  background: rgba(123, 180, 255, 0.3);
-  border-radius: 3px;
-}
-
-.side-menu::-webkit-scrollbar-thumb:hover {
-  background: rgba(123, 180, 255, 0.5);
-}
 
 /* ============================================
    ANIMACIONES

@@ -9,6 +9,7 @@ import { ThereminStorage } from './modules/storage.js';
 import { createSketch } from './modules/sketch.js';
 import { EnvironmentService } from './modules/environment.js';
 import { Capacitor } from '@capacitor/core';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 // ============================================
 // INSTANCIAS Y ESTADO
@@ -33,40 +34,47 @@ const RANDOM_CITIES = [
 ];
 
 // ============================================
+// CONSTANTES DE ICONOS
+// ============================================
+
+// se llama el svg directamente en lugar de usar img para evitar problemas de carga en Android. 
+const ICONS = {
+  play: `<svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true">
+           <polygon fill="currentColor" points="7.11 4.43 18.89 12 7.11 19.57 7.11 4.43"/>
+         </svg>`,
+  pause: `<svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+            <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+          </svg>`
+};
+
+// ============================================
 // REFERENCIAS DOM
 // ============================================
 
-// Pantallas
 const welcomeScreen = document.getElementById('welcome-screen');
 const welcomeStartBtn = document.getElementById('welcome-start-btn');
 const mainInterface = document.getElementById('main-interface');
 
-// Controles principales
-const hamburgerBtn = document.getElementById('hamburger-btn');
+const infoBtn = document.getElementById('info-btn');
 const startBtn = document.getElementById('start-btn');
-const buttonText = startBtn?.querySelector('.button-text');
+const buttonToggleIcon = startBtn?.querySelector('.button-toggle-icon');
 const activeIndicator = document.getElementById('active-indicator');
 
-// Controles de ajustes
 const controlsContainer = document.getElementById('controls-container');
 const moreSettingsBtn = document.getElementById('more-settings-dock-btn');
-const moreSettingsContainer = document.getElementById('more-settings-dock');
+const moreSettingsDock = document.getElementById('more-settings-dock');
 
-// Selectores de onda
 const waveButtons = document.querySelectorAll('[data-wave]');
 
-// Ciudad
 const cityInput = document.getElementById('city-input');
 const cityApplyBtn = document.getElementById('city-apply');
 
-// Labels
 const locationLabel = document.getElementById('location-label');
 const scaleLabel = document.getElementById('scale-label');
 
-// Debug
 const debugOverlay = document.getElementById('debug-overlay');
 
-// Menú lateral
 const sideMenu = document.getElementById('side-menu');
 const closeMenuBtn = document.getElementById('close-menu-btn');
 const menuOverlay = document.getElementById('menu-overlay');
@@ -76,9 +84,17 @@ const wavesMenuStatus = document.getElementById('waves-menu-status');
 const resetSettingsMenu = document.getElementById('reset-settings-menu');
 
 // ============================================
-// FUNCIONES DE UI
+// UTILIDADES
 // ============================================
 
+/**
+ * Detecta si la app está corriendo en web o en dispositivo nativo
+ */
+function isWebPlatform() {
+  return Capacitor.getPlatform() === 'web';
+}
+
+// actualiza el botón activo de tipo de onda
 function updateActiveWaveButton() {
   waveButtons.forEach(btn => {
     const waveType = btn.getAttribute('data-wave');
@@ -86,6 +102,7 @@ function updateActiveWaveButton() {
   });
 }
 
+// actualiza las etiquetas de ubicación y escala
 function updateLabels() {
   if (locationLabel && currentLocation) {
     locationLabel.textContent = currentLocation.name || '';
@@ -96,11 +113,11 @@ function updateLabels() {
 }
 
 // ============================================
-// FUNCIONES DE CLIMA
+// GESTIÓN DEL CLIMA
 // ============================================
 
 async function loadCityWeather(cityName) {
-  console.log('🌍 Cargando clima:', cityName);
+  console.log('Cargando clima:', cityName);
   
   currentLocation = await env.geocodeCity(cityName);
   currentMeteo = await env.fetchMeteo(
@@ -132,15 +149,22 @@ async function loadCityWeather(cityName) {
   updateActiveWaveButton();
   updateLabels();
   
-  console.log('✅ Clima cargado:', currentLocation.name, scaleInfo.scaleName);
+  console.log('Clima cargado:', currentLocation.name, scaleInfo.scaleName);
 }
 
 async function loadRandomCity() {
   const randomCity = RANDOM_CITIES[Math.floor(Math.random() * RANDOM_CITIES.length)];
-  console.log('🎲 Ciudad aleatoria:', randomCity);
+  console.log('Ciudad aleatoria:', randomCity);
   
   try {
     await loadCityWeather(randomCity);
+    
+    // Vibración al cambiar ciudad
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+    } catch (error) {
+      console.log('Haptics no disponible:', error);
+    }
     
     // Feedback visual
     if (locationLabel) {
@@ -152,16 +176,16 @@ async function loadRandomCity() {
       }, 300);
     }
   } catch (error) {
-    console.error('❌ Error cargando ciudad:', error);
+    console.error('Error cargando ciudad:', error);
   }
 }
 
 // ============================================
-// INICIALIZACIÓN DE AUDIO
+// INICIALIZACIÓN Y START
 // ============================================
 
 async function initializeAndStartAudio() {
-  console.log('🎬 Iniciando aplicación...');
+  console.log('Iniciando aplicación...');
   
   // Solicitar permisos
   const permissionOk = await motionSensor.requestPermissions();
@@ -170,7 +194,7 @@ async function initializeAndStartAudio() {
     return;
   }
 
-  // Inicializar sistemas (solo si es necesario)
+  // Inicializar sistemas si es necesario
   const needsInit = !thereminAudio.audioContext || thereminAudio.audioContext.state === 'closed';
   
   if (needsInit) {
@@ -198,31 +222,41 @@ async function initializeAndStartAudio() {
   
   await thereminAudio.start();
 
+  // Vibración al iniciar
+  try {
+    await Haptics.impact({ style: ImpactStyle.Light });
+  } catch (error) {
+    console.log('Haptics no disponible:', error);
+  }
+
   // Actualizar estado
-  if (buttonText) buttonText.textContent = 'Stop';
+  if (buttonToggleIcon) buttonToggleIcon.innerHTML = ICONS.pause;
   isRunning = true;
   storage.registerSession();
   activeIndicator?.classList.add('visible');
 
-  // Transición desde pantalla de bienvenida
-  if (mainInterface?.classList.contains('hidden')) {
-    welcomeScreen?.classList.add('fade-out');
-    
-    setTimeout(() => {
-      welcomeScreen.style.display = 'none';
-      mainInterface?.classList.remove('hidden');
-      
-      // Mostrar debug en web
-      if (Capacitor.getPlatform() === 'web') {
-        setTimeout(() => debugOverlay?.classList.add('visible'), 1000);
-      }
-    }, 800);
-  } else {
-    console.log('✅ Theremin reiniciado desde interfaz principal');
+  // Transición de pantallas
+  mainInterface?.classList.remove('hidden');
+  mainInterface.style.opacity = '0';
+  
+  void mainInterface.offsetHeight;
+  
+  welcomeScreen?.classList.add('fade-out');
+  mainInterface.style.opacity = '1';
+  
+  await new Promise(resolve => {
+    mainInterface?.addEventListener('transitionend', resolve, { once: true });
+  });
+  
+  welcomeScreen.style.display = 'none';
+  
+  // Mostrar debug solo en web
+  if (isWebPlatform()) {
+    debugOverlay?.classList.add('visible');
   }
 
-  console.log('✅ Theremin activo');
-  console.log('💡 Agita el móvil para cambiar de ciudad');
+  console.log('Theremin activo');
+  console.log('Agita el móvil para cambiar de ciudad');
 }
 
 // ============================================
@@ -245,35 +279,32 @@ function closeMenu() {
 // EVENT LISTENERS - NAVEGACIÓN
 // ============================================
 
-// Botón hamburguesa - Volver a bienvenida
-hamburgerBtn?.addEventListener('click', async () => {
-  console.log('🏠 Volviendo a la pantalla de bienvenida...');
+// Botón Info - Volver a bienvenida
+infoBtn?.addEventListener('click', async () => {
+  console.log('Volviendo a la pantalla de bienvenida...');
   
   // Detener theremin
   if (isRunning) {
     await thereminAudio.stop();
     isRunning = false;
-    if (buttonText) buttonText.textContent = 'Play';
+    if (buttonToggleIcon) buttonToggleIcon.innerHTML = ICONS.play;
     activeIndicator?.classList.remove('visible');
     debugOverlay?.classList.remove('visible');
   }
   
-  // Cerrar paneles
-  controlsContainer?.classList.remove('visible');
-  moreSettingsContainer?.classList.remove('visible');
-  moreSettingsBtn?.classList.remove('active');
+  // Cerrar paneles 
+  controlsContainer?.classList.remove('visible'); 
+  moreSettingsDock?.classList.remove('visible'); 
+  moreSettingsBtn?.classList.remove('active'); 
   
-  // Volver a bienvenida
-  mainInterface?.classList.add('hidden');
-  welcomeScreen.style.display = 'flex';
-  welcomeScreen?.classList.remove('fade-out');
+  // Volver a bienvenida 
+  mainInterface?.classList.add('hidden'); 
+  mainInterface.style.opacity = ''; 
   
-  setTimeout(() => {
-    welcomeScreen.style.opacity = '1';
-    welcomeScreen.style.transform = 'scale(1)';
-  }, 50);
-  
-  console.log('✅ De vuelta en la pantalla de bienvenida');
+  // Resetear inline style 
+  welcomeScreen?.classList.remove('fade-out'); 
+  welcomeScreen.style.display = 'flex'; 
+  console.log('De vuelta en la pantalla de bienvenida');
 });
 
 // Botón Start Audio desde bienvenida
@@ -285,14 +316,13 @@ welcomeStartBtn?.addEventListener('click', async () => {
 startBtn?.addEventListener('click', async () => {
   if (!isRunning) {
     await initializeAndStartAudio();
-    debugOverlay?.classList.add('visible');
   } else {
     await thereminAudio.stop();
-    if (buttonText) buttonText.textContent = 'Play';
+    if (buttonToggleIcon) buttonToggleIcon.innerHTML = ICONS.play;
     isRunning = false;
     activeIndicator?.classList.remove('visible');
     debugOverlay?.classList.remove('visible');
-    console.log('⏸️ Audio detenido');
+    console.log('Audio detenido');
   }
 });
 
@@ -300,14 +330,13 @@ startBtn?.addEventListener('click', async () => {
 // EVENT LISTENERS - MENÚ LATERAL
 // ============================================
 
-closeMenuBtn?.addEventListener('click', closeMenu);
-menuOverlay?.addEventListener('click', closeMenu);
+
 
 toggleDebugMenu?.addEventListener('click', () => {
   if (!isRunning) {
     alert('Primero inicia el theremin para ver el debug');
-  } else if (debugOverlay) {
-    debugOverlay.classList.toggle('visible');
+  } else if (isWebPlatform()) {
+    debugOverlay?.classList.toggle('visible');
   }
   closeMenu();
 });
@@ -322,11 +351,7 @@ toggleWavesMenu?.addEventListener('click', () => {
   }
   
   if (toggleWavesMenu) {
-    if (newMode === 1) {
-      toggleWavesMenu.classList.add('active');
-    } else {
-      toggleWavesMenu.classList.remove('active');
-    }
+    toggleWavesMenu.classList.toggle('active', newMode === 1);
   }
   
   closeMenu();
@@ -346,11 +371,7 @@ if (wavesMenuStatus) {
 }
 
 if (toggleWavesMenu) {
-  if (settings.visualMode === 1) {
-    toggleWavesMenu.classList.add('active');
-  } else {
-    toggleWavesMenu.classList.remove('active');
-  }
+  toggleWavesMenu.classList.toggle('active', settings.visualMode === 1);
 }
 
 // ============================================
@@ -358,30 +379,31 @@ if (toggleWavesMenu) {
 // ============================================
 
 moreSettingsBtn?.addEventListener('click', () => {
-  const isVisible = moreSettingsContainer?.classList.contains('visible');
+  const isVisible = moreSettingsDock?.classList.contains('visible');
   
   if (isVisible) {
     controlsContainer?.classList.remove('visible');
-    moreSettingsContainer?.classList.remove('visible');
+    moreSettingsDock?.classList.remove('visible');
     moreSettingsBtn?.classList.remove('active');
-    console.log('⬇️ Panel de ajustes cerrado');
+    console.log('Panel de ajustes cerrado');
   } else {
     controlsContainer?.classList.add('visible');
-    moreSettingsContainer?.classList.add('visible');
+    moreSettingsDock?.classList.add('visible');
     moreSettingsBtn?.classList.add('active');
-    console.log('⬆️ Panel de ajustes abierto');
+    console.log('Panel de ajustes abierto');
   }
 });
 
 // Cerrar panel al hacer click fuera
 document.addEventListener('click', (e) => {
   const clickedInside = controlsContainer?.contains(e.target);
+  const clickedButton = moreSettingsBtn?.contains(e.target);
   
-  if (!clickedInside && controlsContainer?.classList.contains('visible')) {
+  if (!clickedInside && !clickedButton && controlsContainer?.classList.contains('visible')) {
     controlsContainer?.classList.remove('visible');
-    moreSettingsContainer?.classList.remove('visible');
+    moreSettingsDock?.classList.remove('visible');
     moreSettingsBtn?.classList.remove('active');
-    console.log('⬇️ Panel cerrado (click fuera)');
+    console.log('Panel cerrado (click fuera)');
   }
 });
 
@@ -406,12 +428,19 @@ cityApplyBtn?.addEventListener('click', async () => {
 
 // Cambiar tipo de onda
 waveButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const waveType = btn.getAttribute('data-wave');
     settings.waveType = waveType;
     thereminAudio.setWaveType?.(waveType);
     storage.updateSetting('waveType', waveType);
     updateActiveWaveButton();
+    
+    // VIBRACIÓN AL CAMBIAR TIPO DE ONDA
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+    } catch (error) {
+      console.log('Haptics no disponible:', error);
+    }
   });
 });
 
@@ -423,7 +452,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && sideMenu?.classList.contains('open')) {
     closeMenu();
   }
-  if ((e.key === 'd' || e.key === 'D') && isRunning) {
+  if ((e.key === 'd' || e.key === 'D') && isRunning && isWebPlatform()) {
     debugOverlay?.classList.toggle('visible');
   }
 });

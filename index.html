@@ -13,7 +13,7 @@
   <style>
     /* Loader hasta que cargue todo */
     html {
-      background: linear-gradient(135deg, #0A1929, #1A0033);
+      background: linear-gradient(135deg, #423A4B, #24282B);
     }
     
     body {
@@ -55,7 +55,7 @@
       <div class="welcome-instructions">
         <div class="welcome-instruction">
           <span class="instruction-icon">
-            <img src="src/assets/icons/move-movil.svg" alt="Icono de inclinación" class="iconmoonish" />
+            <img src="/src/assets/icons/move-movil.svg" alt="Icono de inclinación" class="iconmoonish" />
           </span>
           <div>
             <h3>Mueve el dispositivo</h3>
@@ -65,7 +65,7 @@
         
         <div class="welcome-instruction">
           <span class="instruction-icon">
-            <img src="src/assets/icons/shake-movil.svg" alt="Icono de agitar" class="iconmoonish" />
+            <img src="/src/assets/icons/shake-movil.svg" alt="Icono de agitar" class="iconmoonish" />
           </span>
           <div>
             <h3>Agita fuertemente</h3>
@@ -75,7 +75,7 @@
         
         <div class="welcome-instruction">
           <span class="instruction-icon">
-            <img src="src/assets/icons/weather.svg" alt="Icono de clima" class="iconmoonish" />
+            <img src="/src/assets/icons/weather.svg" alt="Icono de clima" class="iconmoonish" />
           </span>
           <div>
             <h3>El clima adapta</h3>
@@ -84,10 +84,10 @@
         </div>
       </div>
       
-      <button id="welcome-start-btn" class="glassmorphic-button" type="button">
+      <button id="welcome-start-btn" class="glassmorphic-button autosize-button" type="button">
         <div class="button-glow"></div>
         <span class="button-text">
-          <img src="src/assets/icons/play.svg" alt="Icono de clima" class="iconmoonish" />
+          Iniciar Audio  <img src="/src/assets/icons/play.svg" alt="Icono de clima" class="iconmoonish" />
         </span>
       </button>
     </div>
@@ -102,21 +102,6 @@
 
     <!-- UI Overlay -->
     <div class="ui-overlay">
-      <!-- Botón Hamburguesa -->
-      <button id="hamburger-btn" class="hamburger-btn" aria-label="Abrir menú">
-        <!-- INFO (círculo + "i") -->
-        <svg class="iconmoonish" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <circle cx="12" cy="12" r="9"
-                  fill="none" stroke="currentColor" stroke-width="0.8"/>
-          <path d="M12 10.8v6"
-                fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
-          <circle cx="12" cy="7.6" r="0.6"
-                  fill="currentColor"/>
-        </svg>
-      </button>
-
-      <!-- Overlay para cerrar el menú -->
-      <div id="menu-overlay" class="menu-overlay"></div>
 
       <!-- Top Area - Title -->
       <div class="top-area">
@@ -127,23 +112,32 @@
           <span><strong id="scale-label">pentatonic_major</strong></span>
         </div>
       </div>
-      <!-- Botón Start/Stop -->
-          <div class="center-area">
+      
+          
+
+        
+        <nav class="dock" aria-label="Barra de herramientas">
+           <!-- Botón Info -->
+            <button id="info-btn" class="glassmorphic-button button-right" aria-label="Abrir menú">
+              <div class="button-glow"></div>
+                <img src="/src/assets/icons/info.svg" alt="Icono de información" class="iconmoonish" />
+            </button>
+          <!-- Botón Start/Stop -->
             <button id="start-btn" class="glassmorphic-button" type="button">
               <div class="button-glow"></div>
-              <span class="button-text">Play</span>
-              <div class="active-indicator" id="active-indicator"></div>
+              <span class="button-toggle-icon">
+                <img src="/src/assets/icons/play.svg" alt="Play" class="iconmoonish" />
+              </span>
             </button>
-          </div>
-
+          <!-- Botón More -->
+            <button id="more-settings-dock-btn" class="glassmorphic-button button-right" aria-label="Más ajustes" type="button">
+              <div class="button-glow"></div>
+              <img src="/src/assets/icons/more.svg" alt="Icono de información" class="iconmoonish" />
+            </button>
+        </nav>
       <!-- Bottom Area - Controles adicionales -->
       <div class="bottom-area" id="controls-container">
-        <nav class="dock" aria-label="Barra de herramientas">
-          <button id="more-settings-dock-btn" class="glassmorphic-button" aria-label="Más ajustes" type="button">
-            <div class="button-glow"></div>
-            <span class="button-text"></span>
-          </button>
-        </nav>
+        
 
         <div class="more-settings-dock" id="more-settings-dock" aria-label="Ajustes adicionales">
           <!-- Wave Selector -->
@@ -211,7 +205,6 @@
 
   <!-- Scripts p5 ANTES del module -->
   <script src="./p5_v2.js"></script>
-  <script src="./p5.sound_v2.min.js"></script>
 
   <!-- Código module AL FINAL -->
   <script type="module" src="/src/main.js"></script>
