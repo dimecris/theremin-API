@@ -107,8 +107,8 @@ function updateLabels() {
   if (locationLabel && currentLocation) {
     locationLabel.textContent = currentLocation.name || '';
   }
-  if (scaleLabel && settings.scaleName) {
-    scaleLabel.textContent = settings.scaleName || '';
+  if (scaleLabel && currentMeteo.temperature) {
+    scaleLabel.textContent = currentMeteo.temperature || '';
   }
 }
 
