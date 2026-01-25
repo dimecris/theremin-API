@@ -2,13 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   
-  <!-- Forzar orientación vertical -->
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen" />
-
+  <title>Theremin Meteo</title>
+  
   <!-- CSS CRÍTICO INLINE (evita FOUC) -->
   <style>
     /* Loader hasta que cargue todo */
@@ -37,9 +35,6 @@
       display: inline-block !important;
     }
   </style>
-  
-  <title>Theremin Glitch</title>
-  <link rel="icon" href="data:," />
 </head>
 
 <body>
@@ -150,6 +145,8 @@
 
           <!-- PR2: Entrada de ciudad (Open-Meteo) -->
           <div class="city-search" aria-label="Buscar ciudad">
+          <form id="city-search-form" class="city-search-form-">
+   
             <input
               id="city-input"
               type="text"
@@ -159,6 +156,7 @@
               placeholder="Introduce una ciudad (ej. Palma)"
             />
             <button id="city-apply" class="wave-button active" type="button">Aplicar</button>
+          </form>
           </div>
         </div>
       </div>

@@ -529,7 +529,7 @@ body {
 
 #city-input {
   flex: 1;
-  padding: 0.35rem 1rem;
+  padding: 0.6rem 1rem;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -544,6 +544,15 @@ body {
   box-shadow: 
     0 4px 6px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* Desactivar Shake to Undo en iOS */
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+/* Desactivar Shake to Undo globalmente cuando no hay input activo */
+body:not(:focus-within) {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #city-input::placeholder {

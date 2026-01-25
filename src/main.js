@@ -69,6 +69,8 @@ const waveButtons = document.querySelectorAll('[data-wave]');
 
 const cityInput = document.getElementById('city-input');
 const cityApplyBtn = document.getElementById('city-apply');
+const citySearchForm = document.getElementById('city-search-form'); 
+
 
 const locationLabel = document.getElementById('location-label');
 const scaleLabel = document.getElementById('scale-label');
@@ -421,19 +423,48 @@ document.addEventListener('click', (e) => {
 // Shake para ciudad aleatoria
 motionSensor.onShakeDetected(loadRandomCity);
 
-// Cambiar ciudad desde input
-cityApplyBtn?.addEventListener('click', async () => {
+// Función para aplicar la ciudad
+async function applyCitySearch() {
   const city = cityInput?.value?.trim();
   if (!city) return;
   
   try {
     await loadCityWeather(city);
+    
+    // Vaciar el input después de aplicar
+    if (cityInput) {
+      cityInput.value = '';
+      cityInput.blur(); // Cerrar el teclado en móvil
+      
+      // IMPORTANTE: Forzar que el input pierda completamente el foco
+      // para evitar el "Shake to Undo" de iOS
+      document.activeElement?.blur();
+    }
   } catch (error) {
     alert(error?.message || 'No se pudo localizar la ciudad.');
   }
+}
+
+// Submit del formulario (captura Enter y Done en iOS)
+citySearchForm?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  applyCitySearch();
 });
 
-// Cambiar tipo de onda MANUALMENTE (esto sobreescribe el del clima)
+// Click directo en el botón (por si acaso)
+cityApplyBtn?.addEventListener('click', (e) => {
+  e.preventDefault();
+  applyCitySearch();
+});
+
+// Desactivar Shake to Undo cuando el input pierde el foco
+cityInput?.addEventListener('blur', () => {
+  // Pequeño delay para asegurar que iOS procesa el blur
+  setTimeout(() => {
+    document.body.focus();
+  }, 100);
+});
+
 waveButtons.forEach(btn => {
   btn.addEventListener('click', async () => {
     const waveType = btn.getAttribute('data-wave');
